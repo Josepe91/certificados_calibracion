@@ -12,7 +12,8 @@
 #      lib/data/version_app.dart). Un APK compilado a mano sin este script
 #      nunca bloquea a nadie.
 #   3. Lo distribuye al grupo "tecnicos" por Firebase App Distribution.
-#   4. Hace commit del pubspec y un tag git "v<version>+<build>".
+#   4. Hace commit del pubspec, un tag git "v<version>+<build>" y lo sube
+#      a GitHub (github.com/Josepe91/certificados_calibracion, privado).
 param(
   [Parameter(Mandatory = $true)][string]$Notas,
   [string]$Version
@@ -45,4 +46,9 @@ if ($LASTEXITCODE) { throw 'Falló la distribución (el pubspec quedó con el bu
 git add pubspec.yaml
 git commit -m "Release v$nombre+$build`n`n$Notas"
 git tag "v$nombre+$build"
+# Respaldo en GitHub (privado). Si no hay señal no se cancela nada: la
+# versión ya quedó distribuida; basta con correr `git push --follow-tags`
+# después.
+git push --follow-tags
+if ($LASTEXITCODE) { Write-Warning 'No se pudo subir a GitHub; corre "git push --follow-tags" cuando haya señal.' }
 Write-Host "Listo: v$nombre+$build distribuida y etiquetada." -ForegroundColor Green
