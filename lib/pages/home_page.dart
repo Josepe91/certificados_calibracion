@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../data/btmc_storage.dart';
 import '../data/drive_sync.dart';
+import '../data/excel_nube.dart';
+import '../data/version_app.dart';
 import '../data/inventario_data.dart';
 import '../data/solicitudes_storage.dart';
 import 'solicitudes_page.dart';
@@ -153,6 +155,74 @@ class _HomePageState extends State<HomePage> {
   }
 
   // =========================
+  // SUBIR A LA NUBE (Firebase Storage, ver lib/data/excel_nube.dart)
+  // =========================
+  Future<void> _subirCertificados(BuildContext context) async {
+    if (SolicitudesStorage.contadorNotifier.value == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No hay solicitudes pendientes')),
+      );
+      return;
+    }
+    final (ok, fallidas) = await _conProgreso(
+        context, 'Subiendo certificados...', ExcelNube.subirPendientes);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(fallidas == 0
+            ? '$ok certificado(s) subido(s) a la nube ✓'
+            : '$ok subido(s) · $fallidas sin subir (revisa la señal e '
+                'intenta de nuevo)'),
+        backgroundColor:
+            fallidas == 0 ? Colors.green.shade700 : Colors.orange.shade700,
+        duration: const Duration(seconds: 5),
+      ),
+    );
+  }
+
+  Future<void> _subirInventarios(BuildContext context) async {
+    final (ok, fallidos) = await _conProgreso(
+        context, 'Subiendo inventarios...', ExcelNube.subirInventarios);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok == 0 && fallidos == 0
+            ? 'No hay inventarios para subir'
+            : fallidos == 0
+                ? '$ok inventario(s) subido(s) a la nube ✓'
+                : '$ok subido(s) · $fallidos sin subir (revisa la señal)'),
+        backgroundColor: fallidos == 0 ? null : Colors.orange.shade700,
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
+  Future<T> _conProgreso<T>(
+      BuildContext context, String texto, Future<T> Function() tarea) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          content: Row(
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(width: 20),
+              Expanded(child: Text(texto)),
+            ],
+          ),
+        ),
+      ),
+    );
+    try {
+      return await tarea();
+    } finally {
+      if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
+    }
+  }
+
+  // =========================
   // EXPORTAR INVENTARIO
   // =========================
   Future<void> _exportarInventario(BuildContext context) async {
@@ -215,20 +285,38 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 12),
 
-              // COMPARTIR SOLICITUDES
+              // SUBIR CERTIFICADOS (Excel) A LA NUBE
               _BotonPrincipal(
                 icon: Icons.cloud_upload,
-                texto: 'Compartir solicitudes a Drive',
-                onTap: () => _compartirSolicitudes(context),
+                texto: 'Subir certificados a la nube',
+                onTap: () => _subirCertificados(context),
               ),
 
               const SizedBox(height: 12),
 
-              // EXPORTAR INVENTARIO
+              // SUBIR INVENTARIO (Excel) A LA NUBE
               _BotonPrincipal(
                 icon: Icons.inventory_2,
-                texto: 'Exportar inventario a Drive',
-                onTap: () => _exportarInventario(context),
+                texto: 'Subir inventario a la nube',
+                onTap: () => _subirInventarios(context),
+              ),
+
+              // Compartir por otra app (Drive, WhatsApp, correo): el flujo
+              // anterior, por si se necesita mandar los Excel a alguien.
+              Wrap(
+                alignment: WrapAlignment.center,
+                children: [
+                  TextButton.icon(
+                    icon: const Icon(Icons.share, size: 18),
+                    label: const Text('Compartir solicitudes'),
+                    onPressed: () => _compartirSolicitudes(context),
+                  ),
+                  TextButton.icon(
+                    icon: const Icon(Icons.share, size: 18),
+                    label: const Text('Compartir inventario'),
+                    onPressed: () => _exportarInventario(context),
+                  ),
+                ],
               ),
 
               const Spacer(),
@@ -251,6 +339,16 @@ class _HomePageState extends State<HomePage> {
                   style: TextStyle(color: Colors.red),
                 ),
                 onPressed: () => _limpiarInventario(context),
+              ),
+
+              // Versión instalada: para comparar entre celulares de un
+              // vistazo (ver lib/data/version_app.dart).
+              FutureBuilder<String>(
+                future: VersionApp.etiqueta(),
+                builder: (_, snap) => Text(
+                  snap.data ?? '',
+                  style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                ),
               ),
 
               const SizedBox(height: 10),

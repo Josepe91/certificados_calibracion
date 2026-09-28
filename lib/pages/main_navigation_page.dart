@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/solicitudes_storage.dart';
 import '../data/tecnico_profile.dart';
+import '../data/version_app.dart';
 import '../utils/mayusculas_formatter.dart';
 import 'home_page.dart';
 import 'inventario_page.dart';
@@ -13,13 +14,76 @@ class MainNavigationPage extends StatefulWidget {
   State<MainNavigationPage> createState() => _MainNavigationPageState();
 }
 
-class _MainNavigationPageState extends State<MainNavigationPage> {
+class _MainNavigationPageState extends State<MainNavigationPage>
+    with WidgetsBindingObserver {
   int _index = 0;
+  bool _bloqueoVisible = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _pedirNombreTecnico());
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _pedirNombreTecnico();
+      await _verificarVersion();
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // También al volver a la app (ej. después de dejarla en segundo plano
+  // un día entero): una versión nueva pudo publicarse mientras tanto.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _verificarVersion();
+  }
+
+  // Bloquea la app si este build es más viejo que config/app.version_minima
+  // (ver lib/data/version_app.dart). No se puede cerrar el diálogo: seguir
+  // trabajando con una versión vieja es justo lo que desincroniza el
+  // inventario entre técnicos.
+  Future<void> _verificarVersion() async {
+    if (_bloqueoVisible) return;
+    final minima = await VersionApp.verificar();
+    if (minima == null || !mounted) return;
+    final actual = await VersionApp.etiqueta();
+    if (!mounted) return;
+
+    _bloqueoVisible = true;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          icon: const Icon(Icons.system_update, size: 40),
+          title: const Text('Actualiza la aplicación'),
+          content: Text(
+            'Hay una versión nueva (build $minima) y este celular tiene la '
+            '$actual.\n\n'
+            'Ábrela desde la app "Firebase App Tester" e instálala para '
+            'seguir trabajando. Así todos los técnicos usan la misma versión '
+            'y el inventario se sincroniza bien.',
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () async {
+                final sigue = await VersionApp.verificar();
+                if (sigue == null && dialogContext.mounted) {
+                  Navigator.of(dialogContext).pop();
+                }
+              },
+              child: const Text('Ya actualicé'),
+            ),
+          ],
+        ),
+      ),
+    );
+    _bloqueoVisible = false;
   }
 
   // Se pide una sola vez por dispositivo. El nombre queda guardado en

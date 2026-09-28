@@ -249,7 +249,31 @@ en el MISMO formato que importa `InventarioPage._cargarExcel` (A–H
 equipo, K–O fila 2 cliente) + Observaciones/Estado en I–J, así se puede
 reimportar tal cual.
 
+**Excel en la nube** (`lib/data/excel_nube.dart`): al guardar una
+solicitud, el .xlsx se sube solo (unawaited) a
+`certificados/{clienteId}/{claveEquipo}/<CERT> - <EQUIPO> - <SERIE>.xlsx` en
+Storage; la carpeta usa `claveEquipo` (no el id local) por la misma razón
+que las fotos, y se vacía antes de subir para no dejar el Excel con un
+número de certificado viejo. "Subir certificados a la nube" (Inicio)
+regenera + sube todas las pendientes y mueve a `enviadas/` SOLO las que
+subieron bien (sin confirmación manual). "Subir inventario" sube
+`inventarios/{clienteId}/INVENTARIO <CLIENTE>.xlsx`. Compartir por
+Drive/WhatsApp sigue disponible como botón secundario. La oficina descarga
+desde Firebase console → Storage.
+
 ## Releases
+
+**Publicar SIEMPRE con `tool/release.ps1 -Notas "..."`** (exige git limpio):
+sube el build del pubspec, compila con `--dart-define=PUBLICAR_VERSION=true`,
+distribuye al grupo `tecnicos` y hace commit + tag `v<version>+<build>`.
+
+**Control de versión** (`lib/data/version_app.dart`): al abrir/volver a la
+app se compara el build con `config/app.version_minima` en Firestore; si es
+menor, diálogo bloqueante "Actualiza desde Firebase App Tester". Solo un
+build compilado con `PUBLICAR_VERSION=true` sube ese número (las reglas solo
+permiten subirlo) — así un APK de prueba compilado a mano nunca bloquea a
+los técnicos antes de que tengan cómo actualizar. Sin señal nunca bloquea.
+La versión instalada se ve al pie de Inicio.
 
 Distributed via Firebase App Distribution, not manual file transfer — see
 memory `btmc-certificados-firebase` for the exact command and tester group.

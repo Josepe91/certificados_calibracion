@@ -7,6 +7,17 @@ rules_version = '2';
 //   todos los técnicos de BTMC trabajan los mismos clientes.
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Versión mínima de la app (ver lib/data/version_app.dart). Cualquier
+    // técnico la lee; solo se puede SUBIR el número, nunca bajarlo — así un
+    // celular con un build viejo no puede "desbloquearse" a sí mismo.
+    match /config/app {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+        && request.resource.data.version_minima is int
+        && (resource == null
+            || request.resource.data.version_minima > resource.data.version_minima);
+    }
+
     match /clientes/{clienteId} {
       allow read, write: if request.auth != null;
 

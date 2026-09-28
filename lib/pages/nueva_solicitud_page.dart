@@ -10,6 +10,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../data/certificado_excel.dart';
+import '../data/excel_nube.dart';
 import '../data/solicitudes_storage.dart';
 import '../data/solicitudes_sync.dart';
 import '../data/inventario_data.dart';
@@ -935,6 +936,12 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
             await CertificadoExcel.generarDesdeSolicitud(jsonFile);
       } catch (e, st) {
         debugPrint('NuevaSolicitudPage: error generando certificado: $e\n$st');
+      }
+      // Sube el Excel a la nube sin esperar (mismo criterio que
+      // SolicitudesSync.subirSolicitud abajo). Si no hay señal, queda
+      // pendiente y se sube con "Subir certificados a la nube" en Inicio.
+      if (certificadoXlsx != null) {
+        unawaited(ExcelNube.subirCertificado(jsonFile, certificadoXlsx));
       }
 
       // Si se editó un JSON existente y el equipo cambió, limpiar el
