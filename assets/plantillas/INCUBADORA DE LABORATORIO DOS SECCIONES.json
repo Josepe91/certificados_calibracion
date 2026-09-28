@@ -1,0 +1,25 @@
+{
+  "plantilla": "INCUBADORA_DE_LABORATORIO_DOS_SECCIONES.xlsx",
+  "secciones": [
+    {
+      "titulo": "TEMPERATURA SECTOR DERECHO",
+      "unidad": "°C",
+      "info": "Intervalo de medición: 33 a 40 °C",
+      "puntos": [
+        {"nominal": 33, "celda_nominal": "B7", "celda_lectura": "D7"},
+        {"nominal": 37, "celda_nominal": "B8", "celda_lectura": "D8"},
+        {"nominal": 40, "celda_nominal": "B9", "celda_lectura": "D9"}
+      ]
+    },
+    {
+      "titulo": "TEMPERATURA SECTOR IZQUIERDO",
+      "unidad": "°C",
+      "info": "Intervalo de medición: 33 a 40 °C",
+      "puntos": [
+        {"nominal": 33, "celda_nominal": "B14", "celda_lectura": "D14"},
+        {"nominal": 37, "celda_nominal": "B15", "celda_lectura": "D15"},
+        {"nominal": 40, "celda_nominal": "B16", "celda_lectura": "D16"}
+      ]
+    }
+  ]
+}

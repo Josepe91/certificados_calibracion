@@ -1,0 +1,57 @@
+{
+  "plantilla": "DESFIBRILADOR-MONITOR.xlsx",
+  "secciones": [
+    {
+      "titulo": "CALIBRACIÓN DE ENERGÍA",
+      "unidad": "J",
+      "puntos": [
+        { "nominal": 50,  "celda_nominal": "B5", "celda_lectura": "C5" },
+        { "nominal": 100, "celda_nominal": "B6", "celda_lectura": "C6" },
+        { "nominal": 200, "celda_nominal": "B7", "celda_lectura": "C7" },
+        { "nominal": 300, "celda_nominal": "B8", "celda_lectura": "C8" },
+        { "nominal": 360, "celda_nominal": "B9", "celda_lectura": "C9" }
+      ]
+    },
+    {
+      "titulo": "CALIBRACIÓN DE ECG",
+      "unidad": "lpm",
+      "puntos": [
+        { "nominal": 60,  "celda_nominal": "B14", "celda_lectura": "C14" },
+        { "nominal": 120, "celda_nominal": "B15", "celda_lectura": "C15" },
+        { "nominal": 180, "celda_nominal": "B16", "celda_lectura": "C16" },
+        { "nominal": 240, "celda_nominal": "B17", "celda_lectura": "C17" }
+      ]
+    },
+    {
+      "titulo": "CALIBRACIÓN TIEMPO DE SINCRONISMO",
+      "unidad": "ms",
+      "puntos": [
+        { "nominal": 60,  "celda_nominal": "B21", "celda_lectura": "C21" },
+        { "nominal": 120, "celda_nominal": "B22", "celda_lectura": "C22" },
+        { "nominal": 180, "celda_nominal": "B23", "celda_lectura": "C23" }
+      ]
+    },
+    {
+      "titulo": "CALIBRACIÓN DE NIBP",
+      "unidad": "mmHg",
+      "puntos": [
+        { "nominal": 50,  "celda_nominal": "B27", "celda_lectura": "D27" },
+        { "nominal": 100, "celda_nominal": "B28", "celda_lectura": "D28" },
+        { "nominal": 150, "celda_nominal": "B29", "celda_lectura": "D29" },
+        { "nominal": 200, "celda_nominal": "B30", "celda_lectura": "D30" },
+        { "nominal": 250, "celda_nominal": "B31", "celda_lectura": "D31" }
+      ]
+    },
+    {
+      "titulo": "CALIBRACIÓN DE SPO2",
+      "unidad": "%",
+      "puntos": [
+        { "nominal": 80, "celda_nominal": "B36", "celda_lectura": "D36" },
+        { "nominal": 85, "celda_nominal": "B37", "celda_lectura": "D37" },
+        { "nominal": 90, "celda_nominal": "B38", "celda_lectura": "D38" },
+        { "nominal": 95, "celda_nominal": "B39", "celda_lectura": "D39" },
+        { "nominal": 99, "celda_nominal": "B40", "celda_lectura": "D40" }
+      ]
+    }
+  ]
+}

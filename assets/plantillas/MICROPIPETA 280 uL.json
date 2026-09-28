@@ -1,0 +1,17 @@
+{
+  "plantilla": "MICROPIPETA_280_uL.xlsx",
+  "secciones": [
+    {
+      "titulo": "VOLUMEN",
+      "unidad": "µL",
+      "info": "Intervalo de medición: 280 µL",
+      "puntos": [
+        {
+          "nominal": 280,
+          "celda_nominal": "B6",
+          "celda_lectura": "D6"
+        }
+      ]
+    }
+  ]
+}

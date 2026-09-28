@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1025261964154",
+    "project_id": "btmc-certificados",
+    "storage_bucket": "btmc-certificados.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1025261964154:android:99d53193eb69d0701924c3",
+        "android_client_info": {
+          "package_name": "co.btmc.certificados"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBhi2B7Z1BoLPkbzKU1QE7ODt8QKe73BzA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

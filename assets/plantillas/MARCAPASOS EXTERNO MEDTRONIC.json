@@ -1,0 +1,35 @@
+{
+  "plantilla": "MARCAPASOS_EXTERNO_MEDTRONIC.xlsx",
+  "secciones": [
+    {
+      "titulo": "CALIBRACIÓN DE FRECUENCIA",
+      "unidad": "P/min",
+      "info": "Intervalo de medición: 30 a 200 P/min",
+      "puntos": [
+        {"nominal": 30,  "celda_nominal": "B5", "celda_lectura": "C5"},
+        {"nominal": 120, "celda_nominal": "B6", "celda_lectura": "C6"},
+        {"nominal": 200, "celda_nominal": "B7", "celda_lectura": "C7"}
+      ]
+    },
+    {
+      "titulo": "CALIBRACIÓN DE CORRIENTE VENTRICULAR",
+      "unidad": "mA",
+      "info": "Intervalo de medición: 2 a 20 mA",
+      "puntos": [
+        {"nominal": 2,  "celda_nominal": "B12", "celda_lectura": "C12"},
+        {"nominal": 12, "celda_nominal": "B13", "celda_lectura": "C13"},
+        {"nominal": 20, "celda_nominal": "B14", "celda_lectura": "C14"}
+      ]
+    },
+    {
+      "titulo": "CALIBRACIÓN DE CORRIENTE AURICULAR",
+      "unidad": "mA",
+      "info": "Intervalo de medición: 2 a 20 mA",
+      "puntos": [
+        {"nominal": 2,  "celda_nominal": "B19", "celda_lectura": "C19"},
+        {"nominal": 12, "celda_nominal": "B20", "celda_lectura": "C20"},
+        {"nominal": 20, "celda_nominal": "B21", "celda_lectura": "C21"}
+      ]
+    }
+  ]
+}

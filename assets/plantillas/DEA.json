@@ -1,0 +1,21 @@
+{
+  "plantilla": "DEA.xlsx",
+  "secciones": [
+    {
+      "titulo": "CALIBRACIÓN DE ENERGÍA",
+      "unidad": "J",
+      "puntos": [
+        {
+          "nominal": 50,
+          "celda_nominal": "B5",
+          "celda_lectura": "C5"
+        },
+        {
+          "nominal": 150,
+          "celda_nominal": "B6",
+          "celda_lectura": "C6"
+        }
+      ]
+    }
+  ]
+}

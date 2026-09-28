@@ -1,0 +1,58 @@
+{
+  "plantilla": "ELECTROESTIMULADOR OSIRIS.xlsx",
+  "secciones": [
+    {
+      "titulo": "ANCHO DE PULSO",
+      "unidad": "μs",
+      "puntos": [
+        {
+          "nominal": 100,
+          "celda_nominal": "B5",
+          "celda_lectura": "C5"
+        },
+        {
+          "nominal": 500,
+          "celda_nominal": "B6",
+          "celda_lectura": "C6"
+        },
+        {
+          "nominal": 1000,
+          "celda_nominal": "B7",
+          "celda_lectura": "C7"
+        }
+      ]
+    },
+    {
+      "titulo": "FRECUENCIA DE PULSO",
+      "unidad": "Hz",
+      "puntos": [
+        {
+          "nominal": 2,
+          "celda_nominal": "B11",
+          "celda_lectura": "C11"
+        }
+      ]
+    },
+    {
+      "titulo": "AMPLITUD DE PULSO",
+      "unidad": "mA",
+      "puntos": [
+        {
+          "nominal": 1,
+          "celda_nominal": "B15",
+          "celda_lectura": "C15"
+        },
+        {
+          "nominal": 3,
+          "celda_nominal": "B16",
+          "celda_lectura": "C16"
+        },
+        {
+          "nominal": 5,
+          "celda_nominal": "B17",
+          "celda_lectura": "C17"
+        }
+      ]
+    }
+  ]
+}

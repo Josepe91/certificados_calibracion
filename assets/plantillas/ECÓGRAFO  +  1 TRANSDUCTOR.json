@@ -1,0 +1,31 @@
+{
+  "plantilla": "ECÓGRAFO_____1_TRANSDUCTOR.xlsx",
+  "secciones": [
+    {
+      "titulo": "Calibración Transductor lineal",
+      "unidad": "mm",
+      "puntos": [
+        {
+          "nominal": 70,
+          "celda_nominal": "B5",
+          "celda_lectura": "C5"
+        },
+        {
+          "nominal": 50,
+          "celda_nominal": "B6",
+          "celda_lectura": "C6"
+        },
+        {
+          "nominal": 50,
+          "celda_nominal": "B7",
+          "celda_lectura": "C7"
+        },
+        {
+          "nominal": 10,
+          "celda_nominal": "B8",
+          "celda_lectura": "C8"
+        }
+      ]
+    }
+  ]
+}

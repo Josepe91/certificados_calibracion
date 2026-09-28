@@ -1,0 +1,27 @@
+{
+  "plantilla": "INCUBADORA_ABIERTA.xlsx",
+  "secciones": [
+    {
+      "titulo": "CALIBRACIÓN DE TEMPERATURA AMBIENTE",
+      "unidad": "°C",
+      "puntos": [
+        {"nominal": 35, "celda_nominal": "F4", "celda_lectura": "D4", "etiqueta": "T1"},
+        {"nominal": 35, "celda_nominal": "F5", "celda_lectura": "D5", "etiqueta": "T2"},
+        {"nominal": 35, "celda_nominal": "F6", "celda_lectura": "D6", "etiqueta": "T3"},
+        {"nominal": 35, "celda_nominal": "F7", "celda_lectura": "D7", "etiqueta": "T4"},
+        {"nominal": 35, "celda_nominal": "F8", "celda_lectura": "D8", "etiqueta": "T5"}
+      ]
+    },
+    {
+      "titulo": "CALIBRACIÓN SENSOR DE PIEL",
+      "unidad": "°C",
+      "puntos": [
+        {"nominal": 35, "celda_nominal": "F4",  "celda_lectura": "F13", "etiqueta": "T1"},
+        {"nominal": 35, "celda_nominal": "F5",  "celda_lectura": "F14", "etiqueta": "T2"},
+        {"nominal": 35, "celda_nominal": "F6",  "celda_lectura": "F15", "etiqueta": "T3"},
+        {"nominal": 35, "celda_nominal": "F7",  "celda_lectura": "F16", "etiqueta": "T4"},
+        {"nominal": 35, "celda_nominal": "F8",  "celda_lectura": "F17", "etiqueta": "T5"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "plantilla": "HOLTER_DE_RITMO.xlsx",
+  "secciones": [
+    {
+      "titulo": "FRECUENCIA CARDIACA",
+      "unidad": "Lat/min",
+      "info": "Intervalo de medición: 30 a 240 Lat/min",
+      "puntos": [
+        {"nominal": 30,  "celda_nominal": "C6", "celda_lectura": "E6"},
+        {"nominal": 60,  "celda_nominal": "C7", "celda_lectura": "E7"},
+        {"nominal": 120, "celda_nominal": "C8", "celda_lectura": "E8"},
+        {"nominal": 240, "celda_nominal": "C9", "celda_lectura": "E9"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "plantilla": "DISPENSADOR DE LIQUIDOS 1 mL a 5 mL.xlsx",
+  "secciones": [
+    {
+      "titulo": "VOLUMEN",
+      "unidad": "mL",
+      "info": "Intervalo de medición: 1 a 5 mL",
+      "puntos": [
+        { "nominal": 1, "celda_nominal": "B6", "celda_lectura": "D6" },
+        { "nominal": 2, "celda_nominal": "B7", "celda_lectura": "D7" },
+        { "nominal": 5, "celda_nominal": "B8", "celda_lectura": "D8" }
+      ]
+    }
+  ]
+}

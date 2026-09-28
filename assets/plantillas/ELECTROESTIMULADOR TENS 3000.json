@@ -1,0 +1,89 @@
+{
+  "plantilla": "ELECTROESTIMULADOR TENS 3000.xlsx",
+  "secciones": [
+    {
+      "titulo": "ANCHO DE PULSO",
+      "unidad": "μs",
+      "puntos": [
+        {
+          "nominal": 30,
+          "celda_nominal": "B5",
+          "celda_lectura": "C5"
+        },
+        {
+          "nominal": 80,
+          "celda_nominal": "B6",
+          "celda_lectura": "C6"
+        },
+        {
+          "nominal": 260,
+          "celda_nominal": "B7",
+          "celda_lectura": "C7"
+        }
+      ]
+    },
+    {
+      "titulo": "FRECUENCIA DE PULSO",
+      "unidad": "Hz",
+      "puntos": [
+        {
+          "nominal": 20,
+          "celda_nominal": "B12",
+          "celda_lectura": "C12"
+        },
+        {
+          "nominal": 60,
+          "celda_nominal": "B13",
+          "celda_lectura": "C13"
+        },
+        {
+          "nominal": 150,
+          "celda_nominal": "B14",
+          "celda_lectura": "C14"
+        }
+      ]
+    },
+    {
+      "titulo": "AMPLITUD DE PULSO DERECHO",
+      "unidad": "mA",
+      "puntos": [
+        {
+          "nominal": 10,
+          "celda_nominal": "B18",
+          "celda_lectura": "C18"
+        },
+        {
+          "nominal": 40,
+          "celda_nominal": "B19",
+          "celda_lectura": "C19"
+        },
+        {
+          "nominal": 80,
+          "celda_nominal": "B20",
+          "celda_lectura": "C20"
+        }
+      ]
+    },
+    {
+      "titulo": "AMPLITUD DE PULSO IZQUIERDO",
+      "unidad": "mA",
+      "puntos": [
+        {
+          "nominal": 10,
+          "celda_nominal": "B24",
+          "celda_lectura": "C24"
+        },
+        {
+          "nominal": 40,
+          "celda_nominal": "B25",
+          "celda_lectura": "C25"
+        },
+        {
+          "nominal": 80,
+          "celda_nominal": "B26",
+          "celda_lectura": "C26"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,135 @@
+{
+  "plantilla": "VENTILADOR_NEONATAL.xlsx",
+  "secciones": [
+    {
+      "titulo": "PIP",
+      "unidad": "cmH2O",
+      "info": "Presión inspiratoria pico. Intervalo: 5 a 40 cmH2O",
+      "puntos": [
+        {
+          "nominal": 5,
+          "celda_nominal": "R6",
+          "celda_lectura": "T6"
+        },
+        {
+          "nominal": 10,
+          "celda_nominal": "R7",
+          "celda_lectura": "T7"
+        },
+        {
+          "nominal": 20,
+          "celda_nominal": "R8",
+          "celda_lectura": "T8"
+        },
+        {
+          "nominal": 40,
+          "celda_nominal": "R9",
+          "celda_lectura": "T9"
+        }
+      ]
+    },
+    {
+      "titulo": "OXÍGENO",
+      "unidad": "%",
+      "info": "Calibración de concentración de oxígeno. Intervalo: 21 a 100 %",
+      "puntos": [
+        {
+          "nominal": 21,
+          "celda_nominal": "B14",
+          "celda_lectura": "D14"
+        },
+        {
+          "nominal": 50,
+          "celda_nominal": "B15",
+          "celda_lectura": "D15"
+        },
+        {
+          "nominal": 70,
+          "celda_nominal": "B16",
+          "celda_lectura": "D16"
+        },
+        {
+          "nominal": 100,
+          "celda_nominal": "B17",
+          "celda_lectura": "D17"
+        }
+      ]
+    },
+    {
+      "titulo": "PEEP",
+      "unidad": "cmH2O",
+      "info": "Presión positiva al final de la espiración. Intervalo: 2 a 10 cmH2O",
+      "puntos": [
+        {
+          "nominal": 2,
+          "celda_nominal": "B23",
+          "celda_lectura": "D23"
+        },
+        {
+          "nominal": 6,
+          "celda_nominal": "B24",
+          "celda_lectura": "D24"
+        },
+        {
+          "nominal": 8,
+          "celda_nominal": "B25",
+          "celda_lectura": "D25"
+        },
+        {
+          "nominal": 10,
+          "celda_nominal": "B26",
+          "celda_lectura": "D26"
+        }
+      ]
+    },
+    {
+      "titulo": "FRECUENCIA",
+      "unidad": "bpm",
+      "info": "Calibración de frecuencia respiratoria. Intervalo: 8 a 40 bpm",
+      "puntos": [
+        {
+          "nominal": 8,
+          "celda_nominal": "R14",
+          "celda_lectura": "T14"
+        },
+        {
+          "nominal": 10,
+          "celda_nominal": "R15",
+          "celda_lectura": "T15"
+        },
+        {
+          "nominal": 20,
+          "celda_nominal": "R16",
+          "celda_lectura": "T16"
+        },
+        {
+          "nominal": 40,
+          "celda_nominal": "R17",
+          "celda_lectura": "T17"
+        }
+      ]
+    },
+    {
+      "titulo": "TIEMPO",
+      "unidad": "S",
+      "info": "Calibración de tiempo inspiratorio. Intervalo: 1 S",
+      "puntos": [
+        {
+          "nominal": 1,
+          "celda_nominal": "R23",
+          "celda_lectura": "T23"
+        },
+        {
+          "nominal": 1,
+          "celda_nominal": "R24",
+          "celda_lectura": "T24"
+        },
+        {
+          "nominal": 1,
+          "celda_nominal": "R25",
+          "celda_lectura": "T25"
+        }
+      ]
+    }
+  ]
+}

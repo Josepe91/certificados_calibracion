@@ -1,0 +1,15 @@
+{
+  "plantilla": "HORNO_TERMOCULTIVO.xlsx",
+  "secciones": [
+    {
+      "titulo": "TEMPERATURA SONDA",
+      "unidad": "°C",
+      "info": "Intervalo de medición: 35 a 50 °C",
+      "puntos": [
+        {"nominal": 35, "celda_nominal": "B7", "celda_lectura": "D7"},
+        {"nominal": 45, "celda_nominal": "B8", "celda_lectura": "D8"},
+        {"nominal": 50, "celda_nominal": "B9", "celda_lectura": "D9"}
+      ]
+    }
+  ]
+}

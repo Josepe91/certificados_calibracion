@@ -1,0 +1,25 @@
+{
+  "plantilla": "HOLTER_DE_PRESIÓN.xlsx",
+  "secciones": [
+    {
+      "titulo": "PRESIÓN SISTÓLICA",
+      "unidad": "mmHg",
+      "info": "Intervalo de medición: 80 a 190 mmHg",
+      "puntos": [
+        {"nominal": 80,  "celda_nominal": "A9",  "celda_lectura": "B9"},
+        {"nominal": 120, "celda_nominal": "A10", "celda_lectura": "B10"},
+        {"nominal": 190, "celda_nominal": "A11", "celda_lectura": "B11"}
+      ]
+    },
+    {
+      "titulo": "PRESIÓN DIASTÓLICA",
+      "unidad": "mmHg",
+      "info": "Intervalo de medición: 40 a 120 mmHg",
+      "puntos": [
+        {"nominal": 40,  "celda_nominal": "A19", "celda_lectura": "B19"},
+        {"nominal": 80,  "celda_nominal": "A20", "celda_lectura": "B20"},
+        {"nominal": 120, "celda_nominal": "A21", "celda_lectura": "B21"}
+      ]
+    }
+  ]
+}

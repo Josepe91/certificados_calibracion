@@ -1,0 +1,26 @@
+{
+  "plantilla": "ESPIRÓMETRO.xlsx",
+  "secciones": [
+    {
+      "titulo": "VOLUMEN",
+      "unidad": "L",
+      "puntos": [
+        {
+          "nominal": 1,
+          "celda_nominal": "B6",
+          "celda_lectura": "D6"
+        },
+        {
+          "nominal": 2,
+          "celda_nominal": "B7",
+          "celda_lectura": "D7"
+        },
+        {
+          "nominal": 3,
+          "celda_nominal": "B8",
+          "celda_lectura": "D8"
+        }
+      ]
+    }
+  ]
+}

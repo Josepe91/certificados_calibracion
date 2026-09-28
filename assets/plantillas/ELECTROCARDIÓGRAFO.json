@@ -1,0 +1,47 @@
+{
+  "plantilla": "ELECTROCARDIÓGRAFO.xlsx",
+  "secciones": [
+    {
+      "titulo": "CALIBRACIÓN DE FRECUENCIA",
+      "unidad": "Lat/min",
+      "puntos": [
+        {
+          "nominal": 30,
+          "celda_nominal": "B5",
+          "celda_lectura": "C5"
+        },
+        {
+          "nominal": 60,
+          "celda_nominal": "B6",
+          "celda_lectura": "C6"
+        },
+        {
+          "nominal": 120,
+          "celda_nominal": "B7",
+          "celda_lectura": "C7"
+        },
+        {
+          "nominal": 180,
+          "celda_nominal": "B8",
+          "celda_lectura": "C8"
+        },
+        {
+          "nominal": 240,
+          "celda_nominal": "B9",
+          "celda_lectura": "C9"
+        }
+      ]
+    },
+    {
+      "titulo": "CALIBRACIÓN DE AMPLITUD",
+      "unidad": "mV",
+      "puntos": [
+        {
+          "nominal": 1,
+          "celda_nominal": "B14",
+          "celda_lectura": "C14"
+        }
+      ]
+    }
+  ]
+}

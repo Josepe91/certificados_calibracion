@@ -1,0 +1,31 @@
+{
+  "plantilla": "ELECTROCAUTERIO BOVIE.xlsx",
+  "secciones": [
+    {
+      "titulo": "CALIBRACIÓN DE POTENCIA COAGULACIÓN",
+      "unidad": "W",
+      "puntos": [
+        {
+          "nominal": 10,
+          "celda_nominal": "B13",
+          "celda_lectura": "C13"
+        },
+        {
+          "nominal": 20,
+          "celda_nominal": "B14",
+          "celda_lectura": "C14"
+        },
+        {
+          "nominal": 30,
+          "celda_nominal": "B15",
+          "celda_lectura": "C15"
+        },
+        {
+          "nominal": 40,
+          "celda_nominal": "B16",
+          "celda_lectura": "C16"
+        }
+      ]
+    }
+  ]
+}

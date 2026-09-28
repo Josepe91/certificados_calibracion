@@ -1,0 +1,41 @@
+{
+  "plantilla": "FLUJÓMETRO NEONATAL.xlsx",
+  "secciones": [
+    {
+      "titulo": "CALIBRACIÓN DE FLUJO",
+      "unidad": "Lpm",
+      "puntos": [
+        {
+          "nominal": 0.2,
+          "celda_nominal": "B6",
+          "celda_lectura": "D6",
+          "emp": 0.02
+        },
+        {
+          "nominal": 0.4,
+          "celda_nominal": "B7",
+          "celda_lectura": "D7",
+          "emp": 0.04
+        },
+        {
+          "nominal": 0.6,
+          "celda_nominal": "B8",
+          "celda_lectura": "D8",
+          "emp": 0.06
+        },
+        {
+          "nominal": 0.8,
+          "celda_nominal": "B9",
+          "celda_lectura": "D9",
+          "emp": 0.08
+        },
+        {
+          "nominal": 1,
+          "celda_nominal": "B10",
+          "celda_lectura": "D10",
+          "emp": 0.1
+        }
+      ]
+    }
+  ]
+}

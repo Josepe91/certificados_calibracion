@@ -1,0 +1,19 @@
+{
+  "plantilla": "MEDIDOR_DE_PRESIÓN_ENDOTRAQUEAL.xlsx",
+  "secciones": [
+    {
+      "titulo": "PRESIÓN",
+      "unidad": "cmH2O",
+      "info": "Intervalo de medición: 0 a 120 cmH2O. Se toman lecturas de subida y bajada.",
+      "puntos": [
+        {"nominal": 0,   "celda_nominal": "A8",  "celda_lectura": "B8"},
+        {"nominal": 20,  "celda_nominal": "A9",  "celda_lectura": "B9"},
+        {"nominal": 40,  "celda_nominal": "A10", "celda_lectura": "B10"},
+        {"nominal": 60,  "celda_nominal": "A11", "celda_lectura": "B11"},
+        {"nominal": 80,  "celda_nominal": "A12", "celda_lectura": "B12"},
+        {"nominal": 100, "celda_nominal": "A13", "celda_lectura": "B13"},
+        {"nominal": 120, "celda_nominal": "A14", "celda_lectura": "B14"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "plantilla": "MARCAPASOS_EXTERNO_SJ_JUDE_MEDICAL.xlsx",
+  "secciones": [
+    {
+      "titulo": "CALIBRACIÓN DE FRECUENCIA",
+      "unidad": "P/min",
+      "info": "Intervalo de medición: 30 a 180 P/min",
+      "puntos": [
+        {"nominal": 30,  "celda_nominal": "B5", "celda_lectura": "C5"},
+        {"nominal": 120, "celda_nominal": "B6", "celda_lectura": "C6"},
+        {"nominal": 180, "celda_nominal": "B7", "celda_lectura": "C7"}
+      ]
+    },
+    {
+      "titulo": "CALIBRACIÓN DE AMPLITUD DE PULSO",
+      "unidad": "V",
+      "info": "Intervalo de medición: 2 a 12 V",
+      "puntos": [
+        {"nominal": 2,  "celda_nominal": "B12", "celda_lectura": "C12"},
+        {"nominal": 6,  "celda_nominal": "B13", "celda_lectura": "C13"},
+        {"nominal": 12, "celda_nominal": "B14", "celda_lectura": "C14"}
+      ]
+    }
+  ]
+}

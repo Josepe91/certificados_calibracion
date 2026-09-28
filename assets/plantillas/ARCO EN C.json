@@ -1,0 +1,110 @@
+{
+  "plantilla": "ARCO EN C.xlsx",
+  "secciones": [
+    {
+      "titulo": "CALIBRACIÓN DE VOLTAJE",
+      "unidad": "kV",
+      "puntos": [
+        {
+          "nominal": 60,
+          "celda_nominal": "B6",
+          "celda_lectura": "D6"
+        },
+        {
+          "nominal": 85,
+          "celda_nominal": "B7",
+          "celda_lectura": "D7"
+        },
+        {
+          "nominal": 125,
+          "celda_nominal": "B8",
+          "celda_lectura": "D8"
+        }
+      ]
+    },
+    {
+      "titulo": "TIEMPO DE EXPOSICIÓN",
+      "unidad": "ms",
+      "puntos": [
+        {
+          "nominal": 60,
+          "celda_nominal": "T6",
+          "celda_lectura": "V6"
+        },
+        {
+          "nominal": 85,
+          "celda_nominal": "T7",
+          "celda_lectura": "V7"
+        },
+        {
+          "nominal": 125,
+          "celda_nominal": "T8",
+          "celda_lectura": "V8"
+        }
+      ]
+    },
+    {
+      "titulo": "CALIBRACIÓN DE DOSIMETRÍA",
+      "unidad": "mGy",
+      "puntos": [
+        {
+          "nominal": 60,
+          "celda_nominal": "B14",
+          "celda_lectura": "D14"
+        },
+        {
+          "nominal": 85,
+          "celda_nominal": "B15",
+          "celda_lectura": "D15"
+        },
+        {
+          "nominal": 125,
+          "celda_nominal": "B16",
+          "celda_lectura": "D16"
+        }
+      ]
+    },
+    {
+      "titulo": "HVL",
+      "unidad": "mmAl",
+      "puntos": [
+        {
+          "nominal": 60,
+          "celda_nominal": "T14",
+          "celda_lectura": "V14"
+        },
+        {
+          "nominal": 85,
+          "celda_nominal": "T15",
+          "celda_lectura": "V15"
+        },
+        {
+          "nominal": 125,
+          "celda_nominal": "T16",
+          "celda_lectura": "V16"
+        }
+      ]
+    },
+    {
+      "titulo": "TASA DE DOSIMETRÍA",
+      "unidad": "mGy/s",
+      "puntos": [
+        {
+          "nominal": 60,
+          "celda_nominal": "B22",
+          "celda_lectura": "D22"
+        },
+        {
+          "nominal": 85,
+          "celda_nominal": "B23",
+          "celda_lectura": "D23"
+        },
+        {
+          "nominal": 125,
+          "celda_nominal": "B24",
+          "celda_lectura": "D24"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "plantilla": "CENTRÍFUGA_7200_RPM.xlsx",
+  "secciones": [
+    {
+      "titulo": "CALIBRACIÓN DE VELOCIDAD",
+      "unidad": "RPM",
+      "puntos": [
+        {
+          "nominal": 7200,
+          "celda_nominal": "B5",
+          "celda_lectura": "C5"
+        }
+      ]
+    }
+  ]
+}

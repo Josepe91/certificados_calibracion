@@ -1,0 +1,58 @@
+{
+  "plantilla": "ELECTROESTIMULADOR TOF WATCH.xlsx",
+  "secciones": [
+    {
+      "titulo": "ANCHO DE PULSO",
+      "unidad": "μs",
+      "puntos": [
+        {
+          "nominal": 200,
+          "celda_nominal": "B5",
+          "celda_lectura": "C5"
+        },
+        {
+          "nominal": 300,
+          "celda_nominal": "B6",
+          "celda_lectura": "C6"
+        }
+      ]
+    },
+    {
+      "titulo": "FRECUENCIA DE PULSO",
+      "unidad": "Hz",
+      "puntos": [
+        {
+          "nominal": 50,
+          "celda_nominal": "B11",
+          "celda_lectura": "C11"
+        },
+        {
+          "nominal": 100,
+          "celda_nominal": "B12",
+          "celda_lectura": "C12"
+        }
+      ]
+    },
+    {
+      "titulo": "AMPLITUD DE PULSO",
+      "unidad": "mA",
+      "puntos": [
+        {
+          "nominal": 20,
+          "celda_nominal": "B16",
+          "celda_lectura": "C16"
+        },
+        {
+          "nominal": 40,
+          "celda_nominal": "B17",
+          "celda_lectura": "C17"
+        },
+        {
+          "nominal": 60,
+          "celda_nominal": "B18",
+          "celda_lectura": "C18"
+        }
+      ]
+    }
+  ]
+}

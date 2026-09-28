@@ -1,0 +1,14 @@
+{
+  "plantilla": "HUMIDIFICADOR_MR40.xlsx",
+  "secciones": [
+    {
+      "titulo": "TEMPERATURA SONDA",
+      "unidad": "°C",
+      "info": "Intervalo de medición: 42.9 a 73.9 °C",
+      "puntos": [
+        {"nominal": 42.9, "celda_nominal": "B7", "celda_lectura": "D7"},
+        {"nominal": 73.9, "celda_nominal": "B8", "celda_lectura": "D8"}
+      ]
+    }
+  ]
+}

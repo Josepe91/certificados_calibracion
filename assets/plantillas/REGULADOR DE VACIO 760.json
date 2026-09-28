@@ -1,0 +1,32 @@
+{
+  "plantilla": "REGULADOR_DE_VACIO_760.xlsx",
+  "secciones": [
+    {
+      "titulo": "PRESIÓN NEGATIVA",
+      "unidad": "mmHg",
+      "info": "Intervalo de medición: 0 a -760 mmHg.",
+      "puntos": [
+        {
+          "nominal": 0,
+          "celda_nominal": "A8",
+          "celda_lectura": "B8"
+        },
+        {
+          "nominal": -250,
+          "celda_nominal": "A9",
+          "celda_lectura": "B9"
+        },
+        {
+          "nominal": -500,
+          "celda_nominal": "A10",
+          "celda_lectura": "B10"
+        },
+        {
+          "nominal": -760,
+          "celda_nominal": "A11",
+          "celda_lectura": "B11"
+        }
+      ]
+    }
+  ]
+}

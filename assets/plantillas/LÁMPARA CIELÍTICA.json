@@ -1,0 +1,13 @@
+{
+  "plantilla": "LÁMPARA_CIELÍTICA.xlsx",
+  "secciones": [
+    {
+      "titulo": "INTENSIDAD LUMÍNICA",
+      "unidad": "Lux",
+      "info": "Calibración de iluminancia",
+      "puntos": [
+        {"nominal": 129170, "celda_nominal": "B6", "celda_lectura": "D6"}
+      ]
+    }
+  ]
+}

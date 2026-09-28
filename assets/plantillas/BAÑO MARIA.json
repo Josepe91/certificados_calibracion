@@ -1,0 +1,26 @@
+{
+  "plantilla": "BAÑO MARIA.xlsx",
+  "secciones": [
+    {
+      "titulo": "TEMPERATURA SONDA",
+      "unidad": "°C",
+      "puntos": [
+        {
+          "nominal": 33,
+          "celda_nominal": "B7",
+          "celda_lectura": "D7"
+        },
+        {
+          "nominal": 37,
+          "celda_nominal": "B8",
+          "celda_lectura": "D8"
+        },
+        {
+          "nominal": 40,
+          "celda_nominal": "B9",
+          "celda_lectura": "D9"
+        }
+      ]
+    }
+  ]
+}

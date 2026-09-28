@@ -1,0 +1,26 @@
+{
+  "plantilla": "CALENTADOR_DE_PACIENTE_COVIDIEN.xlsx",
+  "secciones": [
+    {
+      "titulo": "TEMPERATURA SONDA",
+      "unidad": "°C",
+      "puntos": [
+        {
+          "nominal": 34,
+          "celda_nominal": "B7",
+          "celda_lectura": "D7"
+        },
+        {
+          "nominal": 40,
+          "celda_nominal": "B8",
+          "celda_lectura": "D8"
+        },
+        {
+          "nominal": 45,
+          "celda_nominal": "B9",
+          "celda_lectura": "D9"
+        }
+      ]
+    }
+  ]
+}

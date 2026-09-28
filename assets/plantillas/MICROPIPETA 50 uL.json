@@ -1,0 +1,17 @@
+{
+  "plantilla": "MICROPIPETA_50_uL.xlsx",
+  "secciones": [
+    {
+      "titulo": "VOLUMEN",
+      "unidad": "µL",
+      "info": "Intervalo de medición: 50 µL",
+      "puntos": [
+        {
+          "nominal": 50,
+          "celda_nominal": "B6",
+          "celda_lectura": "D6"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "plantilla": "CALENTADOR DE LÍQUIDOS 41  C.xlsx",
+  "secciones": [
+    {
+      "titulo": "TEMPERATURA SONDA",
+      "unidad": "°C",
+      "puntos": [
+        {
+          "nominal": 41,
+          "celda_nominal": "B7",
+          "celda_lectura": "D7"
+        }
+      ]
+    }
+  ]
+}

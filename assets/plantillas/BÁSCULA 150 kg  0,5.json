@@ -1,0 +1,141 @@
+{
+  "plantilla": "BÁSCULA 150 kg 0 5.xlsx",
+  "secciones": [
+    {
+      "titulo": "REPETIBILIDAD",
+      "unidad": "kg",
+      "info": "Valor de prueba: 75 kg (50% capacidad)",
+      "puntos": [
+        {
+          "nominal": 75,
+          "celda_nominal": "C10",
+          "celda_lectura": "E10",
+          "etiqueta": "Repetición 1"
+        },
+        {
+          "nominal": 75,
+          "celda_nominal": "C11",
+          "celda_lectura": "E11",
+          "etiqueta": "Repetición 2"
+        },
+        {
+          "nominal": 75,
+          "celda_nominal": "C12",
+          "celda_lectura": "E12",
+          "etiqueta": "Repetición 3"
+        },
+        {
+          "nominal": 75,
+          "celda_nominal": "C13",
+          "celda_lectura": "E13",
+          "etiqueta": "Repetición 4"
+        },
+        {
+          "nominal": 75,
+          "celda_nominal": "C14",
+          "celda_lectura": "E14",
+          "etiqueta": "Repetición 5"
+        }
+      ]
+    },
+    {
+      "titulo": "EXCENTRICIDAD",
+      "unidad": "kg",
+      "info": "Valor nominal: 60 kg en 5 posiciones",
+      "puntos": [
+        {
+          "nominal": 60,
+          "celda_nominal": "K13",
+          "celda_lectura": "M14",
+          "etiqueta": "Centro"
+        },
+        {
+          "nominal": 60,
+          "celda_nominal": "K13",
+          "celda_lectura": "M15",
+          "etiqueta": "Izquierda abajo"
+        },
+        {
+          "nominal": 60,
+          "celda_nominal": "K13",
+          "celda_lectura": "M16",
+          "etiqueta": "Izquierda arriba"
+        },
+        {
+          "nominal": 60,
+          "celda_nominal": "K13",
+          "celda_lectura": "M17",
+          "etiqueta": "Derecha arriba"
+        },
+        {
+          "nominal": 60,
+          "celda_nominal": "K13",
+          "celda_lectura": "M18",
+          "etiqueta": "Derecha abajo"
+        }
+      ]
+    },
+    {
+      "titulo": "EXACTITUD",
+      "unidad": "kg",
+      "info": "Puntos ascendentes hasta 150 kg",
+      "puntos": [
+        {
+          "nominal": 0.0,
+          "celda_nominal": "S9",
+          "celda_lectura": "U9"
+        },
+        {
+          "nominal": 15.0,
+          "celda_nominal": "S10",
+          "celda_lectura": "U10"
+        },
+        {
+          "nominal": 30.0,
+          "celda_nominal": "S11",
+          "celda_lectura": "U11"
+        },
+        {
+          "nominal": 45.0,
+          "celda_nominal": "S12",
+          "celda_lectura": "U12"
+        },
+        {
+          "nominal": 60.0,
+          "celda_nominal": "S13",
+          "celda_lectura": "U13"
+        },
+        {
+          "nominal": 75.0,
+          "celda_nominal": "S14",
+          "celda_lectura": "U14"
+        },
+        {
+          "nominal": 90.0,
+          "celda_nominal": "S15",
+          "celda_lectura": "U15"
+        },
+        {
+          "nominal": 105.0,
+          "celda_nominal": "S16",
+          "celda_lectura": "U16"
+        },
+        {
+          "nominal": 120.0,
+          "celda_nominal": "S17",
+          "celda_lectura": "U17"
+        },
+        {
+          "nominal": 135.0,
+          "celda_nominal": "S18",
+          "celda_lectura": "U18"
+        },
+        {
+          "nominal": 150.0,
+          "celda_nominal": "S19",
+          "celda_lectura": "U19"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "plantilla": "RESUCITADOR_NEONATAL.xlsx",
+  "secciones": [
+    {
+      "titulo": "PIP",
+      "unidad": "cmH2O",
+      "info": "Intervalo de medición: 5 a 40 cmH2O",
+      "puntos": [
+        {
+          "nominal": 5,
+          "celda_nominal": "D6",
+          "celda_lectura": "F6"
+        },
+        {
+          "nominal": 10,
+          "celda_nominal": "D7",
+          "celda_lectura": "F7"
+        },
+        {
+          "nominal": 20,
+          "celda_nominal": "D8",
+          "celda_lectura": "F8"
+        },
+        {
+          "nominal": 40,
+          "celda_nominal": "D9",
+          "celda_lectura": "F9"
+        }
+      ]
+    }
+  ]
+}

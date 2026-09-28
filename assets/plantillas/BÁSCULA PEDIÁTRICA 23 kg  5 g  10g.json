@@ -1,0 +1,141 @@
+{
+  "plantilla": "BÁSCULA_PEDIÁTRICA_23_kg__5_g__10g.xlsx",
+  "secciones": [
+    {
+      "titulo": "REPETIBILIDAD",
+      "unidad": "g",
+      "info": "Valor de prueba: 11500 g",
+      "puntos": [
+        {
+          "nominal": 11500,
+          "celda_nominal": "C10",
+          "celda_lectura": "E10",
+          "etiqueta": "Repetición 1"
+        },
+        {
+          "nominal": 11500,
+          "celda_nominal": "C11",
+          "celda_lectura": "E11",
+          "etiqueta": "Repetición 2"
+        },
+        {
+          "nominal": 11500,
+          "celda_nominal": "C12",
+          "celda_lectura": "E12",
+          "etiqueta": "Repetición 3"
+        },
+        {
+          "nominal": 11500,
+          "celda_nominal": "C13",
+          "celda_lectura": "E13",
+          "etiqueta": "Repetición 4"
+        },
+        {
+          "nominal": 11500,
+          "celda_nominal": "C14",
+          "celda_lectura": "E14",
+          "etiqueta": "Repetición 5"
+        }
+      ]
+    },
+    {
+      "titulo": "EXCENTRICIDAD",
+      "unidad": "g",
+      "info": "Valor nominal: 9200 g en 5 posiciones",
+      "puntos": [
+        {
+          "nominal": 9200,
+          "celda_nominal": "K13",
+          "celda_lectura": "M14",
+          "etiqueta": "Centro"
+        },
+        {
+          "nominal": 9200,
+          "celda_nominal": "K13",
+          "celda_lectura": "M15",
+          "etiqueta": "Izquierda abajo"
+        },
+        {
+          "nominal": 9200,
+          "celda_nominal": "K13",
+          "celda_lectura": "M16",
+          "etiqueta": "Izquierda arriba"
+        },
+        {
+          "nominal": 9200,
+          "celda_nominal": "K13",
+          "celda_lectura": "M17",
+          "etiqueta": "Derecha arriba"
+        },
+        {
+          "nominal": 9200,
+          "celda_nominal": "K13",
+          "celda_lectura": "M18",
+          "etiqueta": "Derecha abajo"
+        }
+      ]
+    },
+    {
+      "titulo": "EXACTITUD",
+      "unidad": "g",
+      "info": "Puntos ascendentes hasta 23000 g",
+      "puntos": [
+        {
+          "nominal": 0.0,
+          "celda_nominal": "S9",
+          "celda_lectura": "U9"
+        },
+        {
+          "nominal": 2300.0,
+          "celda_nominal": "S10",
+          "celda_lectura": "U10"
+        },
+        {
+          "nominal": 4600.0,
+          "celda_nominal": "S11",
+          "celda_lectura": "U11"
+        },
+        {
+          "nominal": 6900.0,
+          "celda_nominal": "S12",
+          "celda_lectura": "U12"
+        },
+        {
+          "nominal": 9200.0,
+          "celda_nominal": "S13",
+          "celda_lectura": "U13"
+        },
+        {
+          "nominal": 11500.0,
+          "celda_nominal": "S14",
+          "celda_lectura": "U14"
+        },
+        {
+          "nominal": 13800.0,
+          "celda_nominal": "S15",
+          "celda_lectura": "U15"
+        },
+        {
+          "nominal": 16100.0,
+          "celda_nominal": "S16",
+          "celda_lectura": "U16"
+        },
+        {
+          "nominal": 18400.0,
+          "celda_nominal": "S17",
+          "celda_lectura": "U17"
+        },
+        {
+          "nominal": 20700.0,
+          "celda_nominal": "S18",
+          "celda_lectura": "U18"
+        },
+        {
+          "nominal": 23000.0,
+          "celda_nominal": "S19",
+          "celda_lectura": "U19"
+        }
+      ]
+    }
+  ]
+}

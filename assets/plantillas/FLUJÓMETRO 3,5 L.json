@@ -1,0 +1,41 @@
+{
+  "plantilla": "FLUJÓMETRO 3 5 L.xlsx",
+  "secciones": [
+    {
+      "titulo": "CALIBRACIÓN DE FLUJO",
+      "unidad": "Lpm",
+      "puntos": [
+        {
+          "nominal": 0.5,
+          "celda_nominal": "B6",
+          "celda_lectura": "D6",
+          "emp": 0.05
+        },
+        {
+          "nominal": 1,
+          "celda_nominal": "B7",
+          "celda_lectura": "D7",
+          "emp": 0.1
+        },
+        {
+          "nominal": 2,
+          "celda_nominal": "B8",
+          "celda_lectura": "D8",
+          "emp": 0.2
+        },
+        {
+          "nominal": 3,
+          "celda_nominal": "B9",
+          "celda_lectura": "D9",
+          "emp": 0.3
+        },
+        {
+          "nominal": 3.5,
+          "celda_nominal": "B10",
+          "celda_lectura": "D10",
+          "emp": 0.35
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,167 @@
+{
+  "plantilla": "MONITOR_DE_SIGNOS_VITALES__TEM_2_V3.xlsx",
+  "secciones": [
+    {
+      "titulo": "NIBP",
+      "unidad": "mmHg",
+      "info": "Calibración de presión no invasiva. Intervalo: 50 a 250 mmHg",
+      "puntos": [
+        {
+          "nominal": 50,
+          "celda_nominal": "B4",
+          "celda_lectura": "D4"
+        },
+        {
+          "nominal": 100,
+          "celda_nominal": "B5",
+          "celda_lectura": "D5"
+        },
+        {
+          "nominal": 150,
+          "celda_nominal": "B6",
+          "celda_lectura": "D6"
+        },
+        {
+          "nominal": 200,
+          "celda_nominal": "B7",
+          "celda_lectura": "D7"
+        },
+        {
+          "nominal": 250,
+          "celda_nominal": "B8",
+          "celda_lectura": "D8"
+        }
+      ]
+    },
+    {
+      "titulo": "SPO2",
+      "unidad": "%",
+      "info": "Calibración de saturación de oxígeno. Intervalo: 80 a 99 %",
+      "puntos": [
+        {
+          "nominal": 80,
+          "celda_nominal": "B13",
+          "celda_lectura": "D13"
+        },
+        {
+          "nominal": 85,
+          "celda_nominal": "B14",
+          "celda_lectura": "D14"
+        },
+        {
+          "nominal": 90,
+          "celda_nominal": "B15",
+          "celda_lectura": "D15"
+        },
+        {
+          "nominal": 95,
+          "celda_nominal": "B16",
+          "celda_lectura": "D16"
+        },
+        {
+          "nominal": 99,
+          "celda_nominal": "B17",
+          "celda_lectura": "D17"
+        }
+      ]
+    },
+    {
+      "titulo": "ECG",
+      "unidad": "Lat/min",
+      "info": "Calibración de frecuencia cardiaca. Intervalo: 30 a 240 Lat/min",
+      "puntos": [
+        {
+          "nominal": 30,
+          "celda_nominal": "R4",
+          "celda_lectura": "T4"
+        },
+        {
+          "nominal": 60,
+          "celda_nominal": "R5",
+          "celda_lectura": "T5"
+        },
+        {
+          "nominal": 120,
+          "celda_nominal": "R6",
+          "celda_lectura": "T6"
+        },
+        {
+          "nominal": 240,
+          "celda_nominal": "R7",
+          "celda_lectura": "T7"
+        }
+      ]
+    },
+    {
+      "titulo": "ECG (SPO2)",
+      "unidad": "Lat/min",
+      "info": "Calibración de frecuencia cardiaca. Intervalo: 30 a 240 Lat/min",
+      "puntos": [
+        {
+          "nominal": 30,
+          "celda_nominal": "R13",
+          "celda_lectura": "T13"
+        },
+        {
+          "nominal": 60,
+          "celda_nominal": "R14",
+          "celda_lectura": "T14"
+        },
+        {
+          "nominal": 120,
+          "celda_nominal": "R15",
+          "celda_lectura": "T15"
+        },
+        {
+          "nominal": 245,
+          "celda_nominal": "R16",
+          "celda_lectura": "T16"
+        }
+      ]
+    },
+    {
+      "titulo": "TEMPERATURA 1",
+      "unidad": "°C",
+      "info": "Calibración de temperatura. Intervalo: 33 a 37 °C",
+      "puntos": [
+        {
+          "nominal": 33,
+          "celda_nominal": "B21",
+          "celda_lectura": "D21"
+        },
+        {
+          "nominal": 35,
+          "celda_nominal": "B22",
+          "celda_lectura": "D22"
+        },
+        {
+          "nominal": 37,
+          "celda_nominal": "B23",
+          "celda_lectura": "D23"
+        }
+      ]
+    },
+    {
+      "titulo": "TEMPERATURA 2",
+      "unidad": "°C",
+      "info": "Calibración de temperatura. Intervalo: 33 a 37 °C",
+      "puntos": [
+        {
+          "nominal": 33,
+          "celda_nominal": "J21",
+          "celda_lectura": "L21"
+        },
+        {
+          "nominal": 35,
+          "celda_nominal": "J22",
+          "celda_lectura": "L22"
+        },
+        {
+          "nominal": 37,
+          "celda_nominal": "J23",
+          "celda_lectura": "L23"
+        }
+      ]
+    }
+  ]
+}

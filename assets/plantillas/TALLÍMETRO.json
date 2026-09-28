@@ -1,0 +1,37 @@
+{
+  "plantilla": "TALLÍMETRO.xlsx",
+  "secciones": [
+    {
+      "titulo": "CALIBRACIÓN DE LONGITUD",
+      "unidad": "mm",
+      "info": "Intervalo de medición: 30 a 150 mm",
+      "puntos": [
+        {
+          "nominal": 30,
+          "celda_nominal": "B5",
+          "celda_lectura": "C5"
+        },
+        {
+          "nominal": 60,
+          "celda_nominal": "B6",
+          "celda_lectura": "C6"
+        },
+        {
+          "nominal": 90,
+          "celda_nominal": "B7",
+          "celda_lectura": "C7"
+        },
+        {
+          "nominal": 120,
+          "celda_nominal": "B8",
+          "celda_lectura": "C8"
+        },
+        {
+          "nominal": 150,
+          "celda_nominal": "B9",
+          "celda_lectura": "C9"
+        }
+      ]
+    }
+  ]
+}

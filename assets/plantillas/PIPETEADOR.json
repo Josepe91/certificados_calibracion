@@ -1,0 +1,27 @@
+{
+  "plantilla": "PIPETEADOR.xlsx",
+  "secciones": [
+    {
+      "titulo": "VOLUMEN",
+      "unidad": "µL",
+      "info": "Intervalo de medición: 80 a 360 µL",
+      "puntos": [
+        {
+          "nominal": 80,
+          "celda_nominal": "B6",
+          "celda_lectura": "D6"
+        },
+        {
+          "nominal": 160,
+          "celda_nominal": "B7",
+          "celda_lectura": "D7"
+        },
+        {
+          "nominal": 360,
+          "celda_nominal": "B8",
+          "celda_lectura": "D8"
+        }
+      ]
+    }
+  ]
+}

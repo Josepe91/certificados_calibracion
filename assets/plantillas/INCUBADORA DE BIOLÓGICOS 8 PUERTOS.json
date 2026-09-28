@@ -1,0 +1,20 @@
+{
+  "plantilla": "INCUBADORA_DE_BIOLÓGICOS_8_PUERTOS.xlsx",
+  "secciones": [
+    {
+      "titulo": "TEMPERATURA SONDA",
+      "unidad": "°C",
+      "info": "8 puntos de medición al set point configurado",
+      "puntos": [
+        {"nominal": 57, "celda_nominal": "B7",  "celda_lectura": "D7",  "etiqueta": "Sonda 1"},
+        {"nominal": 57, "celda_nominal": "B8",  "celda_lectura": "D8",  "etiqueta": "Sonda 2"},
+        {"nominal": 57, "celda_nominal": "B9",  "celda_lectura": "D9",  "etiqueta": "Sonda 3"},
+        {"nominal": 57, "celda_nominal": "B10", "celda_lectura": "D10", "etiqueta": "Sonda 4"},
+        {"nominal": 57, "celda_nominal": "B11", "celda_lectura": "D11", "etiqueta": "Sonda 5"},
+        {"nominal": 57, "celda_nominal": "B12", "celda_lectura": "D12", "etiqueta": "Sonda 6"},
+        {"nominal": 57, "celda_nominal": "B13", "celda_lectura": "D13", "etiqueta": "Sonda 7"},
+        {"nominal": 57, "celda_nominal": "B14", "celda_lectura": "D14", "etiqueta": "Sonda 8"}
+      ]
+    }
+  ]
+}

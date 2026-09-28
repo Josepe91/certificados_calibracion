@@ -1,0 +1,31 @@
+{
+  "plantilla": "CONCENTRADOR_DE_OXÍGENO.xlsx",
+  "secciones": [
+    {
+      "titulo": "CALIBRACIÓN DE FLUJO",
+      "unidad": "Lpm",
+      "puntos": [
+        {
+          "nominal": 21,
+          "celda_nominal": "B6",
+          "celda_lectura": "D6"
+        },
+        {
+          "nominal": 50,
+          "celda_nominal": "B7",
+          "celda_lectura": "D7"
+        },
+        {
+          "nominal": 70,
+          "celda_nominal": "B8",
+          "celda_lectura": "D8"
+        },
+        {
+          "nominal": 100,
+          "celda_nominal": "B9",
+          "celda_lectura": "D9"
+        }
+      ]
+    }
+  ]
+}

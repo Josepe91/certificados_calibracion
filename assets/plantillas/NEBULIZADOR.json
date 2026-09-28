@@ -1,0 +1,19 @@
+{
+  "plantilla": "NEBULIZADOR.xlsx",
+  "secciones": [
+    {
+      "titulo": "CALIBRACIÓN DE FLUJO",
+      "unidad": "Lpm",
+      "info": "Intervalo de medición: 8 Lpm",
+      "puntos": [
+        {
+          "nominal": "",
+          "celda_nominal": "B6",
+          "celda_lectura": "B6",
+          "celda_lectura_2": "D6",
+          "etiqueta": "Flujo"
+        }
+      ]
+    }
+  ]
+}

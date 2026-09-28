@@ -1,0 +1,32 @@
+{
+  "plantilla": "SERÓFUGA_2450_A_3550_RPM.xlsx",
+  "secciones": [
+    {
+      "titulo": "CALIBRACIÓN DE VELOCIDAD",
+      "unidad": "RPM",
+      "info": "Intervalo de medición: 2450 a 3550 RPM",
+      "puntos": [
+        {
+          "nominal": 2450,
+          "celda_nominal": "B5",
+          "celda_lectura": "C5"
+        },
+        {
+          "nominal": 3050,
+          "celda_nominal": "B6",
+          "celda_lectura": "C6"
+        },
+        {
+          "nominal": 3250,
+          "celda_nominal": "B7",
+          "celda_lectura": "C7"
+        },
+        {
+          "nominal": 3550,
+          "celda_nominal": "B8",
+          "celda_lectura": "C8"
+        }
+      ]
+    }
+  ]
+}

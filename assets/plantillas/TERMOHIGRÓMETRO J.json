@@ -1,0 +1,25 @@
+{
+  "plantilla": "TERMOHIGRÓMETRO J.xlsx",
+  "secciones": [
+    {
+      "titulo": "TEMPERATURA AMBIENTE",
+      "unidad": "°C",
+      "info": "Intervalo de medición: 15 a 31 °C",
+      "puntos": [
+        { "nominal": 15, "celda_nominal": "B4", "celda_lectura": "D4", "celda_lectura_2": "F4" },
+        { "nominal": 23, "celda_nominal": "B5", "celda_lectura": "D5", "celda_lectura_2": "F5" },
+        { "nominal": 31, "celda_nominal": "B6", "celda_lectura": "D6", "celda_lectura_2": "F6" }
+      ]
+    },
+    {
+      "titulo": "CALIBRACIÓN DE HUMEDAD",
+      "unidad": "%hr",
+      "info": "Intervalo de medición: 50 a 65 %hr",
+      "puntos": [
+        { "nominal": 50, "celda_nominal": "B15", "celda_lectura": "D15", "celda_lectura_2": "F15" },
+        { "nominal": 58, "celda_nominal": "B16", "celda_lectura": "D16", "celda_lectura_2": "F16" },
+        { "nominal": 65, "celda_nominal": "B17", "celda_lectura": "D17", "celda_lectura_2": "F17" }
+      ]
+    }
+  ]
+}

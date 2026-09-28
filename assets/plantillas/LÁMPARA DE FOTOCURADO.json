@@ -1,0 +1,13 @@
+{
+  "plantilla": "LÁMPARA_DE_FOTOCURADO.xlsx",
+  "secciones": [
+    {
+      "titulo": "POTENCIA",
+      "unidad": "mW/cm2",
+      "info": "Intervalo de medición: 1000 mW/cm2",
+      "puntos": [
+        {"nominal": 1000, "celda_nominal": "B6", "celda_lectura": "D6"}
+      ]
+    }
+  ]
+}

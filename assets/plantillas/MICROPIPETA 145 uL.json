@@ -1,0 +1,17 @@
+{
+  "plantilla": "MICROPIPETA_145_uL.xlsx",
+  "secciones": [
+    {
+      "titulo": "VOLUMEN",
+      "unidad": "µL",
+      "info": "Intervalo de medición: 145 µL",
+      "puntos": [
+        {
+          "nominal": 145,
+          "celda_nominal": "B6",
+          "celda_lectura": "D6"
+        }
+      ]
+    }
+  ]
+}

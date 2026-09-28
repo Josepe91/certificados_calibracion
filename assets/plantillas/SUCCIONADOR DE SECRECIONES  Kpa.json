@@ -1,0 +1,32 @@
+{
+  "plantilla": "SUCCIONADOR_DE_SECRECIONES__Kpa.xlsx",
+  "secciones": [
+    {
+      "titulo": "PRESIÓN NEGATIVA",
+      "unidad": "kPa",
+      "info": "Intervalo de medición: 0 a -60 kPa.",
+      "puntos": [
+        {
+          "nominal": 0,
+          "celda_nominal": "A8",
+          "celda_lectura": "B8"
+        },
+        {
+          "nominal": -20,
+          "celda_nominal": "A9",
+          "celda_lectura": "B9"
+        },
+        {
+          "nominal": -40,
+          "celda_nominal": "A10",
+          "celda_lectura": "B10"
+        },
+        {
+          "nominal": -60,
+          "celda_nominal": "A11",
+          "celda_lectura": "B11"
+        }
+      ]
+    }
+  ]
+}

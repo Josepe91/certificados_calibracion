@@ -1,0 +1,31 @@
+{
+  "plantilla": "CENTRÍFUGA_1000_A_6000_RPM.xlsx",
+  "secciones": [
+    {
+      "titulo": "CALIBRACIÓN DE VELOCIDAD",
+      "unidad": "RPM",
+      "puntos": [
+        {
+          "nominal": 1000,
+          "celda_nominal": "B5",
+          "celda_lectura": "C5"
+        },
+        {
+          "nominal": 2000,
+          "celda_nominal": "B6",
+          "celda_lectura": "C6"
+        },
+        {
+          "nominal": 4000,
+          "celda_nominal": "B7",
+          "celda_lectura": "C7"
+        },
+        {
+          "nominal": 6000,
+          "celda_nominal": "B8",
+          "celda_lectura": "C8"
+        }
+      ]
+    }
+  ]
+}

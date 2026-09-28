@@ -1,0 +1,15 @@
+{
+  "plantilla": "MICROPIPETA 0,1 - 2,5 uL.xlsx",
+  "secciones": [
+    {
+      "titulo": "VOLUMEN",
+      "unidad": "µL",
+      "info": "Intervalo de medición: 0,1 a 2,5 µL",
+      "puntos": [
+        { "nominal": 0.1, "celda_nominal": "B6", "celda_lectura": "D6" },
+        { "nominal": 1.5, "celda_nominal": "B7", "celda_lectura": "D7" },
+        { "nominal": 2.5, "celda_nominal": "B8", "celda_lectura": "D8" }
+      ]
+    }
+  ]
+}

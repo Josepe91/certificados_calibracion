@@ -1,0 +1,64 @@
+{
+  "plantilla": "PULSOXÍMETRO.xlsx",
+  "secciones": [
+    {
+      "titulo": "ECG (SPO2)",
+      "unidad": "Lat/min",
+      "info": "Calibración de frecuencia cardiaca. Intervalo: 30 a 245 Lat/min",
+      "puntos": [
+        {
+          "nominal": 30,
+          "celda_nominal": "C4",
+          "celda_lectura": "E4"
+        },
+        {
+          "nominal": 60,
+          "celda_nominal": "C5",
+          "celda_lectura": "E5"
+        },
+        {
+          "nominal": 120,
+          "celda_nominal": "C6",
+          "celda_lectura": "E6"
+        },
+        {
+          "nominal": 245,
+          "celda_nominal": "C7",
+          "celda_lectura": "E7"
+        }
+      ]
+    },
+    {
+      "titulo": "SPO2",
+      "unidad": "%",
+      "info": "Calibración de saturación de oxígeno. Intervalo: 80 a 99 %",
+      "puntos": [
+        {
+          "nominal": 80,
+          "celda_nominal": "C13",
+          "celda_lectura": "E13"
+        },
+        {
+          "nominal": 85,
+          "celda_nominal": "C14",
+          "celda_lectura": "E14"
+        },
+        {
+          "nominal": 90,
+          "celda_nominal": "C15",
+          "celda_lectura": "E15"
+        },
+        {
+          "nominal": 95,
+          "celda_nominal": "C16",
+          "celda_lectura": "E16"
+        },
+        {
+          "nominal": 99,
+          "celda_nominal": "C17",
+          "celda_lectura": "E17"
+        }
+      ]
+    }
+  ]
+}

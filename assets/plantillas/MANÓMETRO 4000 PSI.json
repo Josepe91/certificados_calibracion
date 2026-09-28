@@ -1,0 +1,16 @@
+{
+  "plantilla": "MANÓMETRO_4000_PSI.xlsx",
+  "secciones": [
+    {
+      "titulo": "PRESIÓN",
+      "unidad": "PSI",
+      "info": "Intervalo de medición: 1000 a 4000 PSI. Se toman lecturas de subida y bajada.",
+      "puntos": [
+        {"nominal": 1000, "celda_nominal": "A8",  "celda_lectura": "B8"},
+        {"nominal": 2000, "celda_nominal": "A9",  "celda_lectura": "B9"},
+        {"nominal": 3000, "celda_nominal": "A10", "celda_lectura": "B10"},
+        {"nominal": 4000, "celda_nominal": "A11", "celda_lectura": "B11"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+rules_version = '2';
+
+// Reglas mínimas para el inventario compartido entre técnicos:
+// - Solo dispositivos autenticados (auth anónima, ver TecnicoProfile /
+//   InventarioSync en la app) pueden leer o escribir.
+// - No se exige más granularidad (por ejemplo, por empresa) porque hoy
+//   todos los técnicos de BTMC trabajan los mismos clientes.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /clientes/{clienteId} {
+      allow read, write: if request.auth != null;
+
+      match /equipos/{equipoId} {
+        allow read, write: if request.auth != null;
+      }
+
+      // Solicitudes (certificado + mediciones + fotos) — mismo criterio
+      // de acceso que equipos: cualquier técnico autenticado, sin
+      // restricción por técnico individual.
+      match /solicitudes/{equipoId} {
+        allow read, write: if request.auth != null;
+      }
+    }
+  }
+}

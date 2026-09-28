@@ -1,0 +1,25 @@
+{
+  "plantilla": "TERMÓMETRO + 2 TEMP J.xlsx",
+  "secciones": [
+    {
+      "titulo": "TEMPERATURA AMBIENTE",
+      "unidad": "°C",
+      "info": "Intervalo de medición: -15 a -21 °C",
+      "puntos": [
+        { "nominal": -15, "celda_nominal": "B4", "celda_lectura": "D4", "celda_lectura_2": "F4" },
+        { "nominal": -18, "celda_nominal": "B5", "celda_lectura": "D5", "celda_lectura_2": "F5" },
+        { "nominal": -21, "celda_nominal": "B6", "celda_lectura": "D6", "celda_lectura_2": "F6" }
+      ]
+    },
+    {
+      "titulo": "TEMPERATURA SONDA",
+      "unidad": "°C",
+      "info": "Intervalo de medición: 2 a 8 °C",
+      "puntos": [
+        { "nominal": 2, "celda_nominal": "B13", "celda_lectura": "D13", "celda_lectura_2": "F13" },
+        { "nominal": 6, "celda_nominal": "B14", "celda_lectura": "D14", "celda_lectura_2": "F14" },
+        { "nominal": 8, "celda_nominal": "B15", "celda_lectura": "D15", "celda_lectura_2": "F15" }
+      ]
+    }
+  ]
+}

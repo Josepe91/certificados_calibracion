@@ -1,0 +1,32 @@
+{
+  "plantilla": "DOPPLER FETAL.xlsx",
+  "secciones": [
+    {
+      "titulo": "CALIBRACIÓN DE FETOCARDIA",
+      "unidad": "Lat/min",
+      "info": "Intervalo de medición: 60 a 200 Lat/min",
+      "puntos": [
+        {
+          "nominal": 60,
+          "celda_nominal": "B5",
+          "celda_lectura": "C5"
+        },
+        {
+          "nominal": 120,
+          "celda_nominal": "B6",
+          "celda_lectura": "C6"
+        },
+        {
+          "nominal": 180,
+          "celda_nominal": "B7",
+          "celda_lectura": "C7"
+        },
+        {
+          "nominal": 200,
+          "celda_nominal": "B8",
+          "celda_lectura": "C8"
+        }
+      ]
+    }
+  ]
+}

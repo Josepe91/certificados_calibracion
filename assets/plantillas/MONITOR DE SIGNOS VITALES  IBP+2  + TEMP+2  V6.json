@@ -1,0 +1,253 @@
+{
+  "plantilla": "MONITOR_DE_SIGNOS_VITALES__IBP_2____TEMP_2__V6.xlsx",
+  "secciones": [
+    {
+      "titulo": "NIBP",
+      "unidad": "mmHg",
+      "info": "Calibración de presión no invasiva. Intervalo: 50 a 250 mmHg",
+      "puntos": [
+        {
+          "nominal": 50,
+          "celda_nominal": "B4",
+          "celda_lectura": "D4"
+        },
+        {
+          "nominal": 100,
+          "celda_nominal": "B5",
+          "celda_lectura": "D5"
+        },
+        {
+          "nominal": 150,
+          "celda_nominal": "B6",
+          "celda_lectura": "D6"
+        },
+        {
+          "nominal": 200,
+          "celda_nominal": "B7",
+          "celda_lectura": "D7"
+        },
+        {
+          "nominal": 250,
+          "celda_nominal": "B8",
+          "celda_lectura": "D8"
+        }
+      ]
+    },
+    {
+      "titulo": "IBP 1",
+      "unidad": "mmHg",
+      "info": "Calibración de presión invasiva. Intervalo: 50 a 250 mmHg",
+      "puntos": [
+        {
+          "nominal": 50,
+          "celda_nominal": "B13",
+          "celda_lectura": "D13"
+        },
+        {
+          "nominal": 100,
+          "celda_nominal": "B14",
+          "celda_lectura": "D14"
+        },
+        {
+          "nominal": 150,
+          "celda_nominal": "B15",
+          "celda_lectura": "D15"
+        },
+        {
+          "nominal": 200,
+          "celda_nominal": "B16",
+          "celda_lectura": "D16"
+        },
+        {
+          "nominal": 250,
+          "celda_nominal": "B17",
+          "celda_lectura": "D17"
+        }
+      ]
+    },
+    {
+      "titulo": "IBP 2",
+      "unidad": "mmHg",
+      "info": "Calibración de presión invasiva. Intervalo: 50 a 250 mmHg",
+      "puntos": [
+        {
+          "nominal": 50,
+          "celda_nominal": "B23",
+          "celda_lectura": "D23"
+        },
+        {
+          "nominal": 100,
+          "celda_nominal": "B24",
+          "celda_lectura": "D24"
+        },
+        {
+          "nominal": 150,
+          "celda_nominal": "B25",
+          "celda_lectura": "D25"
+        },
+        {
+          "nominal": 200,
+          "celda_nominal": "B26",
+          "celda_lectura": "D26"
+        },
+        {
+          "nominal": 250,
+          "celda_nominal": "B27",
+          "celda_lectura": "D27"
+        }
+      ]
+    },
+    {
+      "titulo": "ECG",
+      "unidad": "Lat/min",
+      "info": "Calibración de frecuencia cardiaca. Intervalo: 30 a 240 Lat/min",
+      "puntos": [
+        {
+          "nominal": 30,
+          "celda_nominal": "R4",
+          "celda_lectura": "T4"
+        },
+        {
+          "nominal": 60,
+          "celda_nominal": "R5",
+          "celda_lectura": "T5"
+        },
+        {
+          "nominal": 120,
+          "celda_nominal": "R6",
+          "celda_lectura": "T6"
+        },
+        {
+          "nominal": 240,
+          "celda_nominal": "R7",
+          "celda_lectura": "T7"
+        }
+      ]
+    },
+    {
+      "titulo": "SPO2",
+      "unidad": "%",
+      "info": "Calibración de saturación de oxígeno. Intervalo: 80 a 99 %",
+      "puntos": [
+        {
+          "nominal": 80,
+          "celda_nominal": "B13",
+          "celda_lectura": "D13"
+        },
+        {
+          "nominal": 85,
+          "celda_nominal": "B14",
+          "celda_lectura": "D14"
+        },
+        {
+          "nominal": 90,
+          "celda_nominal": "B15",
+          "celda_lectura": "D15"
+        },
+        {
+          "nominal": 95,
+          "celda_nominal": "B16",
+          "celda_lectura": "D16"
+        },
+        {
+          "nominal": 99,
+          "celda_nominal": "B17",
+          "celda_lectura": "D17"
+        }
+      ]
+    },
+    {
+      "titulo": "ECG (SPO2)",
+      "unidad": "Lat/min",
+      "info": "Calibración de frecuencia cardiaca. Intervalo: 30 a 240 Lat/min",
+      "puntos": [
+        {
+          "nominal": 30,
+          "celda_nominal": "R23",
+          "celda_lectura": "T23"
+        },
+        {
+          "nominal": 60,
+          "celda_nominal": "R24",
+          "celda_lectura": "T24"
+        },
+        {
+          "nominal": 120,
+          "celda_nominal": "R25",
+          "celda_lectura": "T25"
+        },
+        {
+          "nominal": 245,
+          "celda_nominal": "R26",
+          "celda_lectura": "T26"
+        }
+      ]
+    },
+    {
+      "titulo": "TEMPERATURA 1",
+      "unidad": "°C",
+      "info": "Calibración de temperatura. Intervalo: 33 a 37 °C",
+      "puntos": [
+        {
+          "nominal": 33,
+          "celda_nominal": "B31",
+          "celda_lectura": "D31"
+        },
+        {
+          "nominal": 35,
+          "celda_nominal": "B32",
+          "celda_lectura": "D32"
+        },
+        {
+          "nominal": 37,
+          "celda_nominal": "B33",
+          "celda_lectura": "D33"
+        }
+      ]
+    },
+    {
+      "titulo": "TEMPERATURA 2",
+      "unidad": "°C",
+      "info": "Calibración de temperatura. Intervalo: 33 a 37 °C",
+      "puntos": [
+        {
+          "nominal": 33,
+          "celda_nominal": "R31",
+          "celda_lectura": "T31"
+        },
+        {
+          "nominal": 35,
+          "celda_nominal": "R32",
+          "celda_lectura": "T32"
+        },
+        {
+          "nominal": 37,
+          "celda_nominal": "R33",
+          "celda_lectura": "T33"
+        }
+      ]
+    },
+    {
+      "titulo": "CO",
+      "unidad": "%",
+      "info": "Calibración de monóxido de carbono. Intervalo: 1 a 20 %",
+      "puntos": [
+        {
+          "nominal": 1,
+          "celda_nominal": "AA35",
+          "celda_lectura": "AC35"
+        },
+        {
+          "nominal": 10,
+          "celda_nominal": "AA36",
+          "celda_lectura": "AC36"
+        },
+        {
+          "nominal": 20,
+          "celda_nominal": "AA37",
+          "celda_lectura": "AC37"
+        }
+      ]
+    }
+  ]
+}

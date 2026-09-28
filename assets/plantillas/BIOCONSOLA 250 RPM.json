@@ -1,0 +1,47 @@
+{
+  "plantilla": "BIOCONSOLA_250_RPM.xlsx",
+  "secciones": [
+    {
+      "titulo": "CALIBRACIÓN DE VELOCIDAD",
+      "unidad": "RPM",
+      "puntos": [
+        {
+          "nominal": 250,
+          "celda_nominal": "B5",
+          "celda_lectura": "C5",
+          "etiqueta": "M1"
+        },
+        {
+          "nominal": 250,
+          "celda_nominal": "B6",
+          "celda_lectura": "C6",
+          "etiqueta": "M2"
+        },
+        {
+          "nominal": 250,
+          "celda_nominal": "B7",
+          "celda_lectura": "C7",
+          "etiqueta": "M3"
+        },
+        {
+          "nominal": 250,
+          "celda_nominal": "B8",
+          "celda_lectura": "C8",
+          "etiqueta": "M4"
+        },
+        {
+          "nominal": 250,
+          "celda_nominal": "B9",
+          "celda_lectura": "C9",
+          "etiqueta": "M5"
+        },
+        {
+          "nominal": 250,
+          "celda_nominal": "B10",
+          "celda_lectura": "C10",
+          "etiqueta": "M6"
+        }
+      ]
+    }
+  ]
+}

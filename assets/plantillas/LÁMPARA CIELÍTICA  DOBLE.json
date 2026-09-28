@@ -1,0 +1,23 @@
+{
+  "plantilla": "LÁMPARA_CIELÍTICA__DOBLE.xlsx",
+  "secciones": [
+    {
+      "titulo": "INTENSIDAD LUMÍNICA - LÁMPARA 1",
+      "unidad": "Lux",
+      "info": "Calibración de iluminancia",
+      "puntos": [
+        {"nominal": 140000, "celda_nominal": "B6",  "celda_lectura": "D6"},
+        {"nominal": 160000, "celda_nominal": "B7",  "celda_lectura": "D7"}
+      ]
+    },
+    {
+      "titulo": "INTENSIDAD LUMÍNICA - LÁMPARA 2",
+      "unidad": "Lux",
+      "info": "Calibración de iluminancia",
+      "puntos": [
+        {"nominal": 140000, "celda_nominal": "B12", "celda_lectura": "D12"},
+        {"nominal": 160000, "celda_nominal": "B13", "celda_lectura": "D13"}
+      ]
+    }
+  ]
+}

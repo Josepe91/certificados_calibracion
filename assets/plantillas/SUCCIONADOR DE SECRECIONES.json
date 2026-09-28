@@ -1,0 +1,36 @@
+{
+  "plantilla": "SUCCIONADOR_DE_SECRECIONES.xlsx",
+  "secciones": [
+    {
+      "titulo": "PRESIÓN NEGATIVA",
+      "unidad": "mmHg",
+      "info": "Intervalo de medición: 0 a -600 mmHg.",
+      "puntos": [
+        {
+          "nominal": 0,
+          "celda_nominal": "A8",
+          "celda_lectura": "B8",
+          "emp": 0.0
+        },
+        {
+          "nominal": -100,
+          "celda_nominal": "A9",
+          "celda_lectura": "B9",
+          "emp": 2.0
+        },
+        {
+          "nominal": -300,
+          "celda_nominal": "A10",
+          "celda_lectura": "B10",
+          "emp": 6.0
+        },
+        {
+          "nominal": -600,
+          "celda_nominal": "A11",
+          "celda_lectura": "B11",
+          "emp": 12.0
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "plantilla": "TERMÓMETRO DE PUNZÓN.xlsx",
+  "secciones": [
+    {
+      "titulo": "TEMPERATURA AMBIENTE",
+      "unidad": "°C",
+      "info": "Intervalo de medición: 20 a 80 °C",
+      "puntos": [
+        { "nominal": 20, "celda_nominal": "B4", "celda_lectura": "D4", "celda_lectura_2": "F4" },
+        { "nominal": 50, "celda_nominal": "B5", "celda_lectura": "D5", "celda_lectura_2": "F5" },
+        { "nominal": 80, "celda_nominal": "B6", "celda_lectura": "D6", "celda_lectura_2": "F6" }
+      ]
+    }
+  ]
+}

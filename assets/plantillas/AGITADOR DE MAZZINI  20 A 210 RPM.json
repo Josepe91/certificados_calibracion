@@ -1,0 +1,17 @@
+{
+  "plantilla": "AGITADOR DE MAZZINI  20 A 210 RPM.xlsx",
+  "secciones": [
+    {
+      "titulo": "CALIBRACIÓN DE VELOCIDAD",
+      "unidad": "RPM",
+      "celda_inicio_fila": 5,
+      "celda_lectura_col": "C",
+      "puntos": [
+        { "nominal": 20,  "celda_nominal": "B5", "celda_lectura": "C5" },
+        { "nominal": 80,  "celda_nominal": "B6", "celda_lectura": "C6" },
+        { "nominal": 160, "celda_nominal": "B7", "celda_lectura": "C7" },
+        { "nominal": 210, "celda_nominal": "B8", "celda_lectura": "C8" }
+      ]
+    }
+  ]
+}

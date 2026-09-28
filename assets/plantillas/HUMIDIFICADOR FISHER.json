@@ -1,0 +1,14 @@
+{
+  "plantilla": "HUMIDIFICADOR_FISHER.xlsx",
+  "secciones": [
+    {
+      "titulo": "TEMPERATURA SONDA",
+      "unidad": "°C",
+      "info": "Intervalo de medición: 31 a 37 °C",
+      "puntos": [
+        {"nominal": 31, "celda_nominal": "B7", "celda_lectura": "D7"},
+        {"nominal": 37, "celda_nominal": "B8", "celda_lectura": "D8"}
+      ]
+    }
+  ]
+}

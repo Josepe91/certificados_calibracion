@@ -1,0 +1,16 @@
+{
+  "plantilla": "AGITADOR DE PLAQUETAS 75 RPM.xlsx",
+  "secciones": [
+    {
+      "titulo": "CALIBRACIÓN DE VELOCIDAD",
+      "unidad": "RPM",
+      "puntos": [
+        {
+          "nominal": 75,
+          "celda_nominal": "B5",
+          "celda_lectura": "C5"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "plantilla": "BOMBA_DE_PERFUSIÓN.xlsx",
+  "secciones": [
+    {
+      "titulo": "CALIBRACIÓN DE FLUJO",
+      "unidad": "Lpm",
+      "puntos": [
+        {
+          "nominal": 10,
+          "celda_nominal": "B6",
+          "celda_lectura": "D6",
+          "emp": 1.0
+        }
+      ]
+    }
+  ]
+}

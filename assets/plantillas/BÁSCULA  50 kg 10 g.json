@@ -1,0 +1,162 @@
+{
+  "plantilla": "BÁSCULA 50 kg 10 g.xlsx",
+  "secciones": [
+    {
+      "titulo": "REPETIBILIDAD",
+      "unidad": "g",
+      "info": "Valor de prueba: 25000 g (50% capacidad)",
+      "puntos": [
+        {
+          "nominal": 25000,
+          "celda_nominal": "C10",
+          "celda_lectura": "E10",
+          "etiqueta": "Repetición 1",
+          "emp": 40.0
+        },
+        {
+          "nominal": 25000,
+          "celda_nominal": "C11",
+          "celda_lectura": "E11",
+          "etiqueta": "Repetición 2",
+          "emp": 40.0
+        },
+        {
+          "nominal": 25000,
+          "celda_nominal": "C12",
+          "celda_lectura": "E12",
+          "etiqueta": "Repetición 3",
+          "emp": 40.0
+        },
+        {
+          "nominal": 25000,
+          "celda_nominal": "C13",
+          "celda_lectura": "E13",
+          "etiqueta": "Repetición 4",
+          "emp": 40.0
+        },
+        {
+          "nominal": 25000,
+          "celda_nominal": "C14",
+          "celda_lectura": "E14",
+          "etiqueta": "Repetición 5",
+          "emp": 40.0
+        }
+      ]
+    },
+    {
+      "titulo": "EXCENTRICIDAD",
+      "unidad": "g",
+      "info": "Valor nominal: 17000 g en 5 posiciones",
+      "puntos": [
+        {
+          "nominal": 17000,
+          "celda_nominal": "K13",
+          "celda_lectura": "M14",
+          "etiqueta": "Centro",
+          "emp": 30.0
+        },
+        {
+          "nominal": 17000,
+          "celda_nominal": "K13",
+          "celda_lectura": "M15",
+          "etiqueta": "Izquierda abajo",
+          "emp": 30.0
+        },
+        {
+          "nominal": 17000,
+          "celda_nominal": "K13",
+          "celda_lectura": "M16",
+          "etiqueta": "Izquierda arriba",
+          "emp": 30.0
+        },
+        {
+          "nominal": 17000,
+          "celda_nominal": "K13",
+          "celda_lectura": "M17",
+          "etiqueta": "Derecha arriba",
+          "emp": 30.0
+        },
+        {
+          "nominal": 17000,
+          "celda_nominal": "K13",
+          "celda_lectura": "M18",
+          "etiqueta": "Derecha abajo",
+          "emp": 30.0
+        }
+      ]
+    },
+    {
+      "titulo": "EXACTITUD",
+      "unidad": "g",
+      "info": "Puntos ascendentes hasta 50000 g",
+      "puntos": [
+        {
+          "nominal": 0.0,
+          "celda_nominal": "S9",
+          "celda_lectura": "U9",
+          "emp": 10.0
+        },
+        {
+          "nominal": 5000.0,
+          "celda_nominal": "S10",
+          "celda_lectura": "U10",
+          "emp": 10.0
+        },
+        {
+          "nominal": 10000.0,
+          "celda_nominal": "S11",
+          "celda_lectura": "U11",
+          "emp": 10.0
+        },
+        {
+          "nominal": 15000.0,
+          "celda_nominal": "S12",
+          "celda_lectura": "U12",
+          "emp": 30.0
+        },
+        {
+          "nominal": 20000.0,
+          "celda_nominal": "S13",
+          "celda_lectura": "U13",
+          "emp": 30.0
+        },
+        {
+          "nominal": 25000.0,
+          "celda_nominal": "S14",
+          "celda_lectura": "U14",
+          "emp": 40.0
+        },
+        {
+          "nominal": 30000.0,
+          "celda_nominal": "S15",
+          "celda_lectura": "U15",
+          "emp": 40.0
+        },
+        {
+          "nominal": 35000.0,
+          "celda_nominal": "S16",
+          "celda_lectura": "U16",
+          "emp": 40.0
+        },
+        {
+          "nominal": 40000.0,
+          "celda_nominal": "S17",
+          "celda_lectura": "U17",
+          "emp": 40.0
+        },
+        {
+          "nominal": 45000.0,
+          "celda_nominal": "S18",
+          "celda_lectura": "U18",
+          "emp": 100.0
+        },
+        {
+          "nominal": 50000.0,
+          "celda_nominal": "S19",
+          "celda_lectura": "U19",
+          "emp": 100.0
+        }
+      ]
+    }
+  ]
+}

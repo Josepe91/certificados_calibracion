@@ -1,0 +1,83 @@
+{
+  "plantilla": "DESFIBRILADOR 200.xlsx",
+  "secciones": [
+    {
+      "titulo": "CALIBRACIÓN DE ENERGÍA",
+      "unidad": "J",
+      "puntos": [
+        {
+          "nominal": 20,
+          "celda_nominal": "B5",
+          "celda_lectura": "C5"
+        },
+        {
+          "nominal": 50,
+          "celda_nominal": "B6",
+          "celda_lectura": "C6"
+        },
+        {
+          "nominal": 100,
+          "celda_nominal": "B7",
+          "celda_lectura": "C7"
+        },
+        {
+          "nominal": 150,
+          "celda_nominal": "B8",
+          "celda_lectura": "C8"
+        },
+        {
+          "nominal": 200,
+          "celda_nominal": "B9",
+          "celda_lectura": "C9"
+        }
+      ]
+    },
+    {
+      "titulo": "CALIBRACIÓN DE ECG",
+      "unidad": "lpm",
+      "puntos": [
+        {
+          "nominal": 60,
+          "celda_nominal": "B14",
+          "celda_lectura": "C14"
+        },
+        {
+          "nominal": 120,
+          "celda_nominal": "B15",
+          "celda_lectura": "C15"
+        },
+        {
+          "nominal": 180,
+          "celda_nominal": "B16",
+          "celda_lectura": "C16"
+        },
+        {
+          "nominal": 240,
+          "celda_nominal": "B17",
+          "celda_lectura": "C17"
+        }
+      ]
+    },
+    {
+      "titulo": "CALIBRACIÓN TIEMPO DE SINCRONISMO",
+      "unidad": "ms",
+      "puntos": [
+        {
+          "nominal": 60,
+          "celda_nominal": "B21",
+          "celda_lectura": "C21"
+        },
+        {
+          "nominal": 120,
+          "celda_nominal": "B22",
+          "celda_lectura": "C22"
+        },
+        {
+          "nominal": 180,
+          "celda_nominal": "B23",
+          "celda_lectura": "C23"
+        }
+      ]
+    }
+  ]
+}

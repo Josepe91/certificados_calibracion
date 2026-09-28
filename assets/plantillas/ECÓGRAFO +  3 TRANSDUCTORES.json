@@ -1,0 +1,83 @@
+{
+  "plantilla": "ECÓGRAFO____3_TRANSDUCTORES.xlsx",
+  "secciones": [
+    {
+      "titulo": "Calibración Transductor lineal",
+      "unidad": "mm",
+      "puntos": [
+        {
+          "nominal": 70,
+          "celda_nominal": "B5",
+          "celda_lectura": "C5"
+        },
+        {
+          "nominal": 50,
+          "celda_nominal": "B6",
+          "celda_lectura": "C6"
+        },
+        {
+          "nominal": 50,
+          "celda_nominal": "B7",
+          "celda_lectura": "C7"
+        },
+        {
+          "nominal": 10,
+          "celda_nominal": "B8",
+          "celda_lectura": "C8"
+        }
+      ]
+    },
+    {
+      "titulo": "Calibración Transductor convexo",
+      "unidad": "mm",
+      "puntos": [
+        {
+          "nominal": 70,
+          "celda_nominal": "B12",
+          "celda_lectura": "C12"
+        },
+        {
+          "nominal": 50,
+          "celda_nominal": "B13",
+          "celda_lectura": "C13"
+        },
+        {
+          "nominal": 50,
+          "celda_nominal": "B14",
+          "celda_lectura": "C14"
+        },
+        {
+          "nominal": 10,
+          "celda_nominal": "B15",
+          "celda_lectura": "C15"
+        }
+      ]
+    },
+    {
+      "titulo": "Calibración Transductor endocavitario",
+      "unidad": "mm",
+      "puntos": [
+        {
+          "nominal": 70,
+          "celda_nominal": "B19",
+          "celda_lectura": "C19"
+        },
+        {
+          "nominal": 50,
+          "celda_nominal": "B20",
+          "celda_lectura": "C20"
+        },
+        {
+          "nominal": 50,
+          "celda_nominal": "B21",
+          "celda_lectura": "C21"
+        },
+        {
+          "nominal": 10,
+          "celda_nominal": "B22",
+          "celda_lectura": "C22"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "plantilla": "LÁMPARA_DE_FOTOTERAPIA__XHZ90L.xlsx",
+  "secciones": [
+    {
+      "titulo": "POTENCIA",
+      "unidad": "mW/cm2",
+      "info": "Intervalo de medición: 3.9 mW/cm2",
+      "puntos": [
+        {"nominal": 3.9, "celda_nominal": "B6", "celda_lectura": "D6"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "plantilla": "TENSIÓMETRO_MANUAL.xlsx",
+  "secciones": [
+    {
+      "titulo": "PRESIÓN",
+      "unidad": "mmHg",
+      "info": "Intervalo de medición: 0 a 300 mmHg.",
+      "puntos": [
+        {
+          "nominal": 0,
+          "celda_nominal": "A8",
+          "celda_lectura": "B8"
+        },
+        {
+          "nominal": 50,
+          "celda_nominal": "A9",
+          "celda_lectura": "B9"
+        },
+        {
+          "nominal": 100,
+          "celda_nominal": "A10",
+          "celda_lectura": "B10"
+        },
+        {
+          "nominal": 150,
+          "celda_nominal": "A11",
+          "celda_lectura": "B11"
+        },
+        {
+          "nominal": 200,
+          "celda_nominal": "A12",
+          "celda_lectura": "B12"
+        },
+        {
+          "nominal": 250,
+          "celda_nominal": "A13",
+          "celda_lectura": "B13"
+        },
+        {
+          "nominal": 300,
+          "celda_nominal": "A14",
+          "celda_lectura": "B14"
+        }
+      ]
+    }
+  ]
+}

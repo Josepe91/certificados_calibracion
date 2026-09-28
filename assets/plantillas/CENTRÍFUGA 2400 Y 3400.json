@@ -1,0 +1,21 @@
+{
+  "plantilla": "CENTRÍFUGA_2400_Y_3400.xlsx",
+  "secciones": [
+    {
+      "titulo": "CALIBRACIÓN DE VELOCIDAD",
+      "unidad": "RPM",
+      "puntos": [
+        {
+          "nominal": 2400,
+          "celda_nominal": "B5",
+          "celda_lectura": "C5"
+        },
+        {
+          "nominal": 3400,
+          "celda_nominal": "B6",
+          "celda_lectura": "C6"
+        }
+      ]
+    }
+  ]
+}

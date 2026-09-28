@@ -1,0 +1,21 @@
+{
+  "plantilla": "INCUBADORA_DE_LABORATORIO_PUNTO_FIJO.xlsx",
+  "secciones": [
+    {
+      "titulo": "TEMPERATURA SECTOR DERECHO",
+      "unidad": "°C",
+      "info": "Calibración a punto fijo 37 °C",
+      "puntos": [
+        {"nominal": 37, "celda_nominal": "B7", "celda_lectura": "D7"}
+      ]
+    },
+    {
+      "titulo": "TEMPERATURA SECTOR IZQUIERDO",
+      "unidad": "°C",
+      "info": "Calibración a punto fijo 37 °C",
+      "puntos": [
+        {"nominal": 37, "celda_nominal": "B12", "celda_lectura": "D12"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "plantilla": "ECÓGRAFO____2_TRANSDUCTORES.xlsx",
+  "secciones": [
+    {
+      "titulo": "Calibración Transductor lineal",
+      "unidad": "mm",
+      "puntos": [
+        {
+          "nominal": 70,
+          "celda_nominal": "B5",
+          "celda_lectura": "C5"
+        },
+        {
+          "nominal": 50,
+          "celda_nominal": "B6",
+          "celda_lectura": "C6"
+        },
+        {
+          "nominal": 50,
+          "celda_nominal": "B7",
+          "celda_lectura": "C7"
+        },
+        {
+          "nominal": 10,
+          "celda_nominal": "B8",
+          "celda_lectura": "C8"
+        }
+      ]
+    },
+    {
+      "titulo": "Calibración Transductor convexo",
+      "unidad": "mm",
+      "puntos": [
+        {
+          "nominal": 70,
+          "celda_nominal": "B12",
+          "celda_lectura": "C12"
+        },
+        {
+          "nominal": 50,
+          "celda_nominal": "B13",
+          "celda_lectura": "C13"
+        },
+        {
+          "nominal": 50,
+          "celda_nominal": "B14",
+          "celda_lectura": "C14"
+        },
+        {
+          "nominal": 10,
+          "celda_nominal": "B15",
+          "celda_lectura": "C15"
+        }
+      ]
+    }
+  ]
+}

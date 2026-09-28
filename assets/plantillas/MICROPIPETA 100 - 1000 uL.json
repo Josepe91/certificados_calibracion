@@ -1,0 +1,27 @@
+{
+  "plantilla": "MICROPIPETA_100_-_1000_uL.xlsx",
+  "secciones": [
+    {
+      "titulo": "VOLUMEN",
+      "unidad": "µL",
+      "info": "Intervalo de medición: 100 a 1000 µL",
+      "puntos": [
+        {
+          "nominal": 100,
+          "celda_nominal": "B6",
+          "celda_lectura": "D6"
+        },
+        {
+          "nominal": 500,
+          "celda_nominal": "B7",
+          "celda_lectura": "D7"
+        },
+        {
+          "nominal": 1000,
+          "celda_nominal": "B8",
+          "celda_lectura": "D8"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "plantilla": "LÁMPARA_DE_FOTOTERAPIA_LULLABY.xlsx",
+  "secciones": [
+    {
+      "titulo": "POTENCIA",
+      "unidad": "µW/cm2",
+      "info": "Intervalo de medición: 22 a 45 µW/cm2",
+      "puntos": [
+        {"nominal": 22, "celda_nominal": "B6", "celda_lectura": "D6"},
+        {"nominal": 45, "celda_nominal": "B7", "celda_lectura": "D7"}
+      ]
+    }
+  ]
+}
