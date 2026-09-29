@@ -45,7 +45,7 @@ if ($LASTEXITCODE) { throw 'Falló la distribución (el pubspec quedó con el bu
 
 git add pubspec.yaml
 git commit -m "Release v$nombre+$build`n`n$Notas"
-git tag "v$nombre+$build"
+git tag -a "v$nombre+$build" -m "Release v$nombre+$build"
 # Respaldo en GitHub (privado). Si no hay señal no se cancela nada: la
 # versión ya quedó distribuida; basta con correr `git push --follow-tags`
 # después.
