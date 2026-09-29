@@ -51,7 +51,7 @@ class _SolicitudesPageState extends State<SolicitudesPage> {
         final data = jsonDecode(await f.readAsString());
         final equipoData = data['equipo'] as Map<String, dynamic>?;
         if (equipoData != null) {
-          clavesLocales.add(InventarioSync.claveEquipo(equipoData));
+          clavesLocales.add(InventarioSync.docId(equipoData));
         }
         resultado.add(_SolicitudMeta(
           file: f,
@@ -65,6 +65,21 @@ class _SolicitudesPageState extends State<SolicitudesPage> {
         // Si el JSON no se puede leer, mostrar solo el nombre del archivo
         resultado.add(_SolicitudMeta(file: f));
       }
+    }
+
+    // Las ya archivadas en enviadas/ también son de este celular: sin
+    // esto, después de "Subir certificados" reaparecían abajo como si
+    // fueran de otro técnico y tocarlas las volvía a bajar a pendientes/.
+    for (final f in (await SolicitudesStorage.enviadasDir())
+        .listSync()
+        .whereType<File>()
+        .where((f) => f.path.toLowerCase().endsWith('.json'))) {
+      try {
+        final equipoData = jsonDecode(await f.readAsString())['equipo'];
+        if (equipoData is Map<String, dynamic>) {
+          clavesLocales.add(InventarioSync.docId(equipoData));
+        }
+      } catch (_) {}
     }
 
     // Solicitudes en la nube del cliente activo hechas por CUALQUIER

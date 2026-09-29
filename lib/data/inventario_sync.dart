@@ -33,6 +33,8 @@ class InventarioSync {
 
   static StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _sub;
   static String? _clienteIdActivo;
+  // Si el listener del cliente activo ya entregó al menos una lista.
+  static bool _yaAplicado = false;
 
   /// Callback que InventarioData registra para recibir los cambios remotos
   /// (agregar/actualizar/eliminar) y aplicarlos sobre `equiposNotifier`.
@@ -40,8 +42,7 @@ class InventarioSync {
       onEquiposRemotos;
 
   // 'sincronizado' | 'sincronizando' | 'sin_conexion' | 'error' | 'apagado'
-  static final ValueNotifier<String> estadoNotifier =
-      ValueNotifier('apagado');
+  static final ValueNotifier<String> estadoNotifier = ValueNotifier('apagado');
 
   static bool get activo => _clienteIdActivo != null;
 
@@ -104,6 +105,19 @@ class InventarioSync {
     return clave.length > 400 ? clave.substring(0, 400) : clave;
   }
 
+  /// Id del documento de un equipo en la nube. Es `clave_nube`, que se
+  /// fija UNA vez (al importar o crear el equipo, o es el id del documento
+  /// que bajó de la nube) y nunca se recalcula. Antes se usaba
+  /// [claveEquipo] en cada escritura: corregir la serie/ubicación o
+  /// reimportar un Excel con una fila insertada cambiaba la clave, se
+  /// escribía un documento NUEVO y el viejo quedaba — equipo duplicado
+  /// para todos los técnicos. [claveEquipo] queda solo como respaldo para
+  /// datos guardados antes de este campo (su clave es la que ya tienen).
+  static String docId(Map<String, dynamic> equipo) {
+    final clave = equipo['clave_nube']?.toString() ?? '';
+    return clave.isNotEmpty ? clave : claveEquipo(equipo);
+  }
+
   static Future<void> _asegurarSesion() async {
     if (FirebaseAuth.instance.currentUser == null) {
       await FirebaseAuth.instance.signInAnonymously();
@@ -119,6 +133,7 @@ class InventarioSync {
     if (_clienteIdActivo == clienteId && _sub != null) return;
     await detach();
     _clienteIdActivo = clienteId;
+    _yaAplicado = false;
 
     estadoNotifier.value = 'sincronizando';
     // El orden se resuelve en InventarioData con el campo 'orden' de cada
@@ -135,10 +150,20 @@ class InventarioSync {
     _sub = _equiposRef(clienteId)
         .snapshots(includeMetadataChanges: true)
         .listen((snap) {
-      final remoto = snap.docs.map((d) => _paraApp(d.data())).toList();
-      onEquiposRemotos?.call(remoto);
       estadoNotifier.value =
           snap.metadata.isFromCache ? 'sin_conexion' : 'sincronizado';
+      // Un snapshot VACÍO que viene del caché no significa "la nube no
+      // tiene equipos", sino "este celular no tiene nada cacheado" (caché
+      // limpiado o recolectado por Firestore). Aplicarlo reemplazaría el
+      // inventario local por una lista vacía y la guardaría en el JSON.
+      if (snap.metadata.isFromCache && snap.docs.isEmpty) return;
+      // Cambios solo de metadata (una escritura propia confirmada, pasar
+      // de caché a servidor) no traen datos nuevos: no hace falta
+      // reemplazar la lista ni reescribir el JSON local.
+      if (snap.docChanges.isEmpty && _yaAplicado) return;
+      _yaAplicado = true;
+      final remoto = snap.docs.map(_equipoDeDoc).toList();
+      onEquiposRemotos?.call(remoto);
     }, onError: (e) {
       debugPrint('InventarioSync: error en listener ($e)');
       estadoNotifier.value = 'error';
@@ -172,7 +197,8 @@ class InventarioSync {
             const GetOptions(source: Source.server),
           );
       if (existentes.docs.isEmpty && equiposLocales.isNotEmpty) {
-        await _subirEstructura(clienteId, clienteDoc, clienteMeta, equiposLocales);
+        await _subirEstructura(
+            clienteId, clienteDoc, clienteMeta, equiposLocales);
       } else {
         await clienteDoc.set({
           ...clienteMeta,
@@ -239,14 +265,17 @@ class InventarioSync {
       final lote = equipos.skip(inicio).take(tamanoLote);
       final batch = _db.batch();
       if (inicio == 0) {
-        batch.set(clienteDoc, {
-          ...clienteMeta,
-          'ultima_modificacion': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+        batch.set(
+            clienteDoc,
+            {
+              ...clienteMeta,
+              'ultima_modificacion': FieldValue.serverTimestamp(),
+            },
+            SetOptions(merge: true));
       }
       for (final e in lote) {
-        batch.set(_equiposRef(clienteId).doc(claveEquipo(e)),
-            _soloEstructura(e), SetOptions(merge: true));
+        batch.set(_equiposRef(clienteId).doc(docId(e)), _soloEstructura(e),
+            SetOptions(merge: true));
       }
       await batch.commit();
     }
@@ -282,7 +311,7 @@ class InventarioSync {
     try {
       await _asegurarSesion();
       final snap = await _equiposRef(clienteId).get();
-      return snap.docs.map((d) => _paraApp(d.data())).toList();
+      return snap.docs.map(_equipoDeDoc).toList();
     } catch (e) {
       debugPrint('InventarioSync.descargarEquipos: $e');
       return [];
@@ -305,7 +334,7 @@ class InventarioSync {
     try {
       await _asegurarSesion();
       final tecnico = await TecnicoProfile.obtenerNombre();
-      await _equiposRef(clienteId).doc(claveEquipo(equipo)).set({
+      await _equiposRef(clienteId).doc(docId(equipo)).set({
         ..._limpiar(equipo),
         if (tecnico.isNotEmpty) 'actualizado_por': tecnico,
         'actualizado_en': FieldValue.serverTimestamp(),
@@ -324,7 +353,7 @@ class InventarioSync {
   ) async {
     try {
       await _asegurarSesion();
-      await _equiposRef(clienteId).doc(claveEquipo(equipo)).delete();
+      await _equiposRef(clienteId).doc(docId(equipo)).delete();
     } catch (e) {
       debugPrint('InventarioSync.eliminarEquipo: $e');
     }
@@ -344,6 +373,13 @@ class InventarioSync {
       debugPrint('InventarioSync.actualizarMetaCliente: $e');
     }
   }
+
+  /// El id del documento ES la clave del equipo: se copia a `clave_nube`
+  /// para que toda escritura posterior vuelva a este mismo documento
+  /// aunque se editen sus campos.
+  static Map<String, dynamic> _equipoDeDoc(
+          QueryDocumentSnapshot<Map<String, dynamic>> d) =>
+      {..._paraApp(d.data()), 'clave_nube': d.id};
 
   /// Convierte los tipos propios de Firestore (como `Timestamp`) que llegan
   /// en un documento a algo que el resto de la app pueda guardar tal cual

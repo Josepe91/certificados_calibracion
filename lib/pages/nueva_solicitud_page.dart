@@ -718,6 +718,12 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
   // Compara dos equipos usando la misma lógica de búsqueda en cascada
   // que usa el inventario (serie → inventario → nombre+ubicación).
   bool _mismoEquipo(Map<String, dynamic> a, Map<String, dynamic> b) {
+    // clave_nube es igual en todos los celulares (ver
+    // InventarioData.indexPorIdOCascada); el id local puede no serlo.
+    final claveA = a['clave_nube']?.toString() ?? '';
+    final claveB = b['clave_nube']?.toString() ?? '';
+    if (claveA.isNotEmpty && claveB.isNotEmpty) return claveA == claveB;
+
     final idA = a['id']?.toString() ?? '';
     final idB = b['id']?.toString() ?? '';
     if (idA.isNotEmpty && idB.isNotEmpty) return idA == idB;

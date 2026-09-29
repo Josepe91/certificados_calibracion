@@ -24,7 +24,20 @@ deliberate: two technicians almost never type a client name identically
 they'd silently write to two different documents. Do not weaken this
 normalization.
 
-**`equipoId`** = `InventarioSync.claveEquipo(equipo)` — derived from the
+**`equipoId`** = `InventarioSync.docId(equipo)` = the equipo's
+**`clave_nube`** field (since 2026-09-29), fixed ONCE and never recomputed:
+set by `InventarioData.fusionarConExistentes` on import (inherited from the
+matched existing equipo, else `claveEquipo`), by `agregarEquipo`, by
+`_asegurarIds` for legacy data, and from `doc.id` for every equipo read from
+Firestore (`_equipoDeDoc`). Before this, every write recomputed
+`claveEquipo(equipo)` from content — editing serie/ubicación or reimporting
+an Excel with an inserted row wrote a NEW doc and left the old one:
+duplicated equipos for everyone. Never address an equipo doc with
+`claveEquipo` directly; always `docId`. Matching (`indexPorIdOCascada`,
+`_mismoEquipo`) tries `clave_nube` before the local `id`, because the cloud
+`id` field is last-writer-wins and can differ from an old solicitud's.
+
+`claveEquipo(equipo)` (legacy fallback / initial value) — derived from the
 equipo's own content (nombre+marca+modelo+serie+inventario+ubicacion,
 normalized) plus its `orden` (row position in the imported Excel), NOT from
 the local per-device random `id` field. This is the single most important
@@ -72,6 +85,11 @@ per-client JSON cache and for solicitud files) throws "Converting object to
 an encodable object failed: Instance of 'Timestamp'" the next time *anything*
 gets saved after a remote sync event. If new Firestore-typed fields are ever
 added to the equipo map, extend `_paraApp` accordingly.
+
+**Listener guards** (`_attachListener`): an EMPTY snapshot from cache is
+ignored (it means "nothing cached", not "no equipos" — applying it wiped the
+local inventory), and metadata-only snapshots after the first are ignored
+(no list replace / JSON rewrite).
 
 **Sync status badge:** `InventarioSync.estadoNotifier`. The listener must use
 `snapshots(includeMetadataChanges: true)` — without it, a snapshot that

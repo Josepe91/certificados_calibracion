@@ -124,17 +124,40 @@ class InventarioData {
         equipos[i] = {...equipos[i], 'id': _generarId()};
         asignado = true;
       }
+      // Datos guardados antes de clave_nube: su documento en la nube es el
+      // que calcula claveEquipo con el contenido actual.
+      if ((equipos[i]['clave_nube']?.toString() ?? '').isEmpty) {
+        equipos[i] = {
+          ...equipos[i],
+          'clave_nube': InventarioSync.claveEquipo(equipos[i]),
+        };
+        asignado = true;
+      }
     }
     return asignado;
   }
 
-  /// Busca el índice de un equipo por su id. Si el equipo de referencia no
-  /// trae id (dato viejo), cae de vuelta a la búsqueda en cascada por
+  /// Busca el índice de un equipo por clave_nube, luego por id y, si el
+  /// equipo de referencia no trae ninguno (dato viejo), en cascada por
   /// serie → inventario → nombre+ubicación.
+  ///
+  /// clave_nube va primero porque es igual en todos los celulares. El `id`
+  /// local no: en la nube gana el del último celular que escribió el
+  /// equipo, así que una solicitud guardada antes puede traer un id que ya
+  /// no está en la lista, y la cascada por serie terminaba en el PRIMER
+  /// equipo con esa serie ("NO REGISTRA") — certificado al equipo
+  /// equivocado.
   static int indexPorIdOCascada(
     List<Map<String, dynamic>> lista,
     Map<String, dynamic> referencia,
   ) {
+    final clave = referencia['clave_nube']?.toString() ?? '';
+    if (clave.isNotEmpty) {
+      final porClave =
+          lista.indexWhere((e) => e['clave_nube']?.toString() == clave);
+      if (porClave != -1) return porClave;
+    }
+
     final id = referencia['id']?.toString() ?? '';
     if (id.isNotEmpty) {
       final porId = lista.indexWhere((e) => e['id']?.toString() == id);
@@ -266,6 +289,7 @@ class InventarioData {
   static void _aplicarEquiposRemotos(List<Map<String, dynamic>> remotos) {
     if (cliente.isEmpty) return;
     final copia = remotos.map((e) => Map<String, dynamic>.from(e)).toList();
+    _asegurarIds(copia); // equipos creados desde un celular sin id
     copia.sort((a, b) {
       final oa = a['orden'] is int ? a['orden'] as int : 0;
       final ob = b['orden'] is int ? b['orden'] as int : 0;
@@ -332,129 +356,28 @@ class InventarioData {
     required String ciudadCliente,
     required List<Map<String, dynamic>> equipos,
   }) async {
-    // Leer datos existentes de la app antes de sobreescribir.
-    // Se preservan: id, certificado, fecha, observaciones,
-    // fuera_de_servicio, fuera_de_servicio_por, no_pasa_calibracion,
-    // no_pasa_calibracion_detalle y no_pasa_calibracion_por (campos que el
-    // técnico asigna en la app y que el Excel no trae).
-    //
-    // Varios equipos pueden compartir el mismo texto de serie/inventario
-    // (p.ej. "NO REGISTRA"), así que la clave de emparejamiento no alcanza
-    // por sí sola: se agrega un contador de ocurrencia para que el N-ésimo
-    // equipo repetido del Excel viejo se empareje con el N-ésimo equipo
-    // repetido del Excel nuevo, en vez de que todos los repetidos colapsen
-    // sobre un solo registro (lo que cruzaba certificados entre equipos
-    // físicamente distintos).
-    final Map<String, List<Map<String, dynamic>>> datosExistentes = {};
+    // Equipos que ya se conocían de este cliente: la copia local (que el
+    // listener mantiene al día con la nube) o, si este celular nunca lo
+    // tuvo, la nube misma — así un técnico que importa por primera vez un
+    // Excel que otro ya cargó reusa los MISMOS documentos (clave_nube) en
+    // vez de crear otros porque sus filas quedaron en distinto orden.
+    List<Map<String, dynamic>> existentes = [];
     final archivoExistente = await _archivoCliente(nombreCliente);
     if (await archivoExistente.exists()) {
       try {
-        final dataExistente = jsonDecode(await archivoExistente.readAsString());
-        for (final e in (dataExistente['equipos'] as List? ?? [])) {
-          final cert = e['certificado']?.toString().trim() ?? '';
-          final obs = e['observaciones']?.toString().trim() ?? '';
-          final fds = e['fuera_de_servicio'] == true;
-          final fdsPor = e['fuera_de_servicio_por']?.toString().trim() ?? '';
-          final noPasa = e['no_pasa_calibracion'] == true;
-          final noPasaDetalle =
-              e['no_pasa_calibracion_detalle']?.toString().trim() ?? '';
-          final noPasaPor =
-              e['no_pasa_calibracion_por']?.toString().trim() ?? '';
-          final id = e['id']?.toString() ?? '';
-          if (cert.isEmpty &&
-              obs.isEmpty &&
-              !fds &&
-              !noPasa &&
-              id.isEmpty) {
-            continue;
-          }
-
-          final serie = e['serie']?.toString().trim() ?? '';
-          final inv = e['inventario']?.toString().trim() ?? '';
-          final nom = e['nombre']?.toString().trim() ?? '';
-          final ubic = e['ubicacion']?.toString().trim() ?? '';
-          final key = serie.isNotEmpty
-              ? 's:$serie'
-              : inv.isNotEmpty
-                  ? 'i:$inv'
-                  : 'n:$nom:$ubic';
-          (datosExistentes[key] ??= []).add({
-            'id': id,
-            'certificado': cert,
-            'fecha': e['fecha']?.toString().trim() ?? '',
-            'observaciones': obs,
-            'fuera_de_servicio': fds,
-            'fuera_de_servicio_por': fdsPor,
-            'no_pasa_calibracion': noPasa,
-            'no_pasa_calibracion_detalle': noPasaDetalle,
-            'no_pasa_calibracion_por': noPasaPor,
-          });
-        }
+        final data = jsonDecode(await archivoExistente.readAsString());
+        existentes = [
+          for (final e in (data['equipos'] as List? ?? []))
+            Map<String, dynamic>.from(e as Map)
+        ];
       } catch (_) {}
+    } else {
+      existentes = await InventarioSync.descargarEquipos(
+              InventarioSync.slug(nombreCliente))
+          .timeout(const Duration(seconds: 10), onTimeout: () => []);
     }
 
-    // Aplicar datos existentes a los equipos del nuevo Excel, emparejando
-    // por ocurrencia dentro de cada clave repetida.
-    if (datosExistentes.isNotEmpty) {
-      final Map<String, int> ocurrencia = {};
-      equipos = equipos.map((e) {
-        final serie = e['serie']?.toString().trim() ?? '';
-        final inv = e['inventario']?.toString().trim() ?? '';
-        final nom = e['nombre']?.toString().trim() ?? '';
-        final ubic = e['ubicacion']?.toString().trim() ?? '';
-        final key = serie.isNotEmpty
-            ? 's:$serie'
-            : inv.isNotEmpty
-                ? 'i:$inv'
-                : 'n:$nom:$ubic';
-
-        final candidatos = datosExistentes[key];
-        if (candidatos == null || candidatos.isEmpty) return e;
-
-        final n = ocurrencia[key] = (ocurrencia[key] ?? 0);
-        ocurrencia[key] = n + 1;
-        if (n >= candidatos.length) return e;
-        final datos = candidatos[n];
-
-        final certExcel = e['certificado']?.toString().trim() ?? '';
-        final idPrevio =
-            (datos['id'] as String).isNotEmpty ? datos['id'] as String : null;
-        return {
-          ...e,
-          // Conservar el id del equipo previo para que su historial e
-          // identidad no se pierdan al reimportar el mismo Excel.
-          if (idPrevio != null) 'id': idPrevio,
-          // Certificado/fecha: usar el del Excel si lo trae, si no el de la app
-          if (certExcel.isEmpty && (datos['certificado'] as String).isNotEmpty)
-            'certificado': datos['certificado'],
-          if (certExcel.isEmpty && (datos['fecha'] as String).isNotEmpty)
-            'fecha': datos['fecha'],
-          // Observaciones y fuera_de_servicio: siempre de la app (el Excel no los tiene)
-          if ((datos['observaciones'] as String).isNotEmpty)
-            'observaciones': datos['observaciones'],
-          if (datos['fuera_de_servicio'] == true) 'fuera_de_servicio': true,
-          if ((datos['fuera_de_servicio_por'] as String).isNotEmpty)
-            'fuera_de_servicio_por': datos['fuera_de_servicio_por'],
-          if (datos['no_pasa_calibracion'] == true)
-            'no_pasa_calibracion': true,
-          if ((datos['no_pasa_calibracion_detalle'] as String).isNotEmpty)
-            'no_pasa_calibracion_detalle': datos['no_pasa_calibracion_detalle'],
-          if ((datos['no_pasa_calibracion_por'] as String).isNotEmpty)
-            'no_pasa_calibracion_por': datos['no_pasa_calibracion_por'],
-        };
-      }).toList();
-    }
-
-    // Todo equipo que siga sin id (nuevo, o Excel reimportado por primera
-    // vez) recibe uno ahora.
-    _asegurarIds(equipos);
-
-    // 'orden' fija la posición original del Excel para que, al sincronizar
-    // por Firestore (que no garantiza el orden de inserción), la lista se
-    // pueda reordenar igual en todos los dispositivos.
-    equipos = [
-      for (int i = 0; i < equipos.length; i++) {...equipos[i], 'orden': i}
-    ];
+    equipos = fusionarConExistentes(equipos, existentes);
 
     cliente = nombreCliente;
     nit = nitCliente;
@@ -486,6 +409,85 @@ class InventarioData {
     ));
   }
 
+  /// Clave natural para emparejar un equipo del Excel nuevo con uno ya
+  /// conocido: serie, si no inventario, si no nombre+ubicación.
+  static String _claveEmparejar(Map<String, dynamic> e) {
+    String t(String campo) => e[campo]?.toString().trim() ?? '';
+    if (t('serie').isNotEmpty) return 's:${t('serie')}';
+    if (t('inventario').isNotEmpty) return 'i:${t('inventario')}';
+    return 'n:${t('nombre')}:${t('ubicacion')}';
+  }
+
+  /// Aplica sobre los equipos de un Excel recién importado lo que la app
+  /// ya sabía de ellos (id, clave_nube, certificado, fecha, observaciones,
+  /// fuera de servicio, no pasa calibración — campos que el Excel no trae
+  /// o que el técnico registró en la app) y fija `orden` y `clave_nube`.
+  ///
+  /// Varios equipos pueden compartir serie/inventario de relleno ("NO
+  /// REGISTRA"), así que el N-ésimo repetido del Excel nuevo se empareja
+  /// con el N-ésimo repetido de los existentes, en vez de colapsar todos
+  /// sobre uno (eso cruzaba certificados entre equipos distintos).
+  ///
+  /// `clave_nube` se hereda del existente emparejado: una fila insertada o
+  /// borrada en el Excel ya no cambia el documento de nube de los demás
+  /// equipos. Solo los equipos sin pareja reciben una clave nueva.
+  static List<Map<String, dynamic>> fusionarConExistentes(
+    List<Map<String, dynamic>> nuevos,
+    List<Map<String, dynamic>> existentes,
+  ) {
+    const textosDeLaApp = [
+      'observaciones',
+      'fuera_de_servicio_por',
+      'no_pasa_calibracion_detalle',
+      'no_pasa_calibracion_por',
+    ];
+
+    final Map<String, List<Map<String, dynamic>>> porClave = {};
+    for (final e in existentes) {
+      (porClave[_claveEmparejar(e)] ??= []).add(e);
+    }
+
+    final Map<String, int> ocurrencia = {};
+    final resultado = <Map<String, dynamic>>[];
+    for (int i = 0; i < nuevos.length; i++) {
+      final e = <String, dynamic>{...nuevos[i], 'orden': i};
+      final clave = _claveEmparejar(e);
+      final n = ocurrencia[clave] = (ocurrencia[clave] ?? 0) + 1;
+      final candidatos = porClave[clave];
+      final previo = (candidatos != null && n <= candidatos.length)
+          ? candidatos[n - 1]
+          : null;
+
+      if (previo != null) {
+        String v(String campo) => previo[campo]?.toString().trim() ?? '';
+        if (v('id').isNotEmpty) e['id'] = v('id');
+        // Documento que el equipo YA tiene en la nube (datos viejos sin
+        // clave_nube: el que se calculaba con su contenido y orden de
+        // entonces).
+        e['clave_nube'] = InventarioSync.docId(previo);
+        // Certificado/fecha: el del Excel si lo trae, si no el de la app.
+        if ((e['certificado']?.toString().trim() ?? '').isEmpty) {
+          if (v('certificado').isNotEmpty) e['certificado'] = v('certificado');
+          if (v('fecha').isNotEmpty) e['fecha'] = v('fecha');
+        }
+        for (final campo in textosDeLaApp) {
+          if (v(campo).isNotEmpty) e[campo] = v(campo);
+        }
+        if (previo['fuera_de_servicio'] == true) e['fuera_de_servicio'] = true;
+        if (previo['no_pasa_calibracion'] == true) {
+          e['no_pasa_calibracion'] = true;
+        }
+      }
+
+      if ((e['id']?.toString() ?? '').isEmpty) e['id'] = _generarId();
+      if ((e['clave_nube']?.toString() ?? '').isEmpty) {
+        e['clave_nube'] = InventarioSync.claveEquipo(e);
+      }
+      resultado.add(e);
+    }
+    return resultado;
+  }
+
   // =====================
   // ELIMINAR INVENTARIO DE UN CLIENTE
   // =====================
@@ -510,6 +512,7 @@ class InventarioData {
       'id': _generarId(),
       'orden': copia.length,
     };
+    nuevo['clave_nube'] = InventarioSync.claveEquipo(nuevo);
     copia.add(nuevo);
     equiposNotifier.value = copia;
     await _guardar();
@@ -528,8 +531,8 @@ class InventarioData {
     copia[index] = {...copia[index], ...actualizado};
     equiposNotifier.value = copia;
     await _guardar();
-    unawaited(
-        InventarioSync.upsertEquipo(InventarioSync.slug(cliente), copia[index]));
+    unawaited(InventarioSync.upsertEquipo(
+        InventarioSync.slug(cliente), copia[index]));
   }
 
   // =====================
@@ -559,8 +562,8 @@ class InventarioData {
     };
     equiposNotifier.value = copia;
     await _guardar();
-    unawaited(
-        InventarioSync.upsertEquipo(InventarioSync.slug(cliente), copia[index]));
+    unawaited(InventarioSync.upsertEquipo(
+        InventarioSync.slug(cliente), copia[index]));
   }
 
   // Retorna true si el equipo fue encontrado y actualizado, false si no.
@@ -595,8 +598,8 @@ class InventarioData {
     };
     equiposNotifier.value = copia;
     await _guardar();
-    unawaited(
-        InventarioSync.upsertEquipo(InventarioSync.slug(cliente), copia[index]));
+    unawaited(InventarioSync.upsertEquipo(
+        InventarioSync.slug(cliente), copia[index]));
     return true;
   }
 
@@ -619,7 +622,8 @@ class InventarioData {
   // =====================
   static List<Map<String, dynamic>> buscar(String texto) {
     final q = TextUtils.quitarTildes(texto).toLowerCase();
-    String norm(dynamic v) => TextUtils.quitarTildes(v.toString()).toLowerCase();
+    String norm(dynamic v) =>
+        TextUtils.quitarTildes(v.toString()).toLowerCase();
     return equipos.where((e) {
       return norm(e['serie']).contains(q) ||
           norm(e['inventario']).contains(q) ||

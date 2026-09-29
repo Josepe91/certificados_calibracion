@@ -22,12 +22,12 @@ import 'tecnico_profile.dart';
 /// solicitud aunque no la haya creado él en su celular.
 ///
 /// Mismo patrón que InventarioSync: la clave del documento se deriva del
-/// CONTENIDO del equipo (InventarioSync.claveEquipo), nunca del id local
+/// CONTENIDO del equipo (InventarioSync.docId), nunca del id local
 /// aleatorio del dispositivo — así dos técnicos que hablan del mismo
 /// equipo físico siempre leen/escriben el mismo documento en
-/// `clientes/{clienteId}/solicitudes/{claveEquipo}`, y las fotos del mismo
+/// `clientes/{clienteId}/solicitudes/{docId}`, y las fotos del mismo
 /// equipo siempre caen en la misma carpeta de Storage
-/// `clientes/{clienteId}/solicitudes/{claveEquipo}/`.
+/// `clientes/{clienteId}/solicitudes/{docId}/`.
 class SolicitudesSync {
   SolicitudesSync._();
 
@@ -128,7 +128,7 @@ class SolicitudesSync {
       fotos ??= await _fotosDelZip(archivoJson, solicitud);
 
       await _asegurarSesion();
-      final clave = InventarioSync.claveEquipo(equipo);
+      final clave = InventarioSync.docId(equipo);
       final carpeta = _carpetaFotos(clienteId, clave);
 
       // Reemplaza TODAS las fotos de la carpeta por las actuales, para que

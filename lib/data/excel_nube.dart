@@ -18,10 +18,10 @@ import 'tecnico_profile.dart';
 /// a mano por Drive.
 ///
 /// Rutas en Storage:
-/// - `certificados/{clienteId}/{claveEquipo}/<CERT> - <EQUIPO> - <SERIE>.xlsx`
+/// - `certificados/{clienteId}/{docId}/<CERT> - <EQUIPO> - <SERIE>.xlsx`
 /// - `inventarios/{clienteId}/INVENTARIO <CLIENTE>.xlsx`
 ///
-/// La carpeta de cada certificado usa `InventarioSync.claveEquipo` (mismo
+/// La carpeta de cada certificado usa `InventarioSync.docId` (mismo
 /// criterio que las fotos en SolicitudesSync): dos técnicos que certifican
 /// el mismo equipo escriben en la MISMA carpeta. Antes de subir se borra
 /// lo que hubiera en ella, así si se corrige el número de certificado no
@@ -55,7 +55,7 @@ class ExcelNube {
       await _asegurarSesion();
       final carpeta = _storage.ref('certificados/'
           '${InventarioSync.slug(cliente)}/'
-          '${InventarioSync.claveEquipo(equipo)}');
+          '${InventarioSync.docId(equipo)}');
 
       final nombre = '${_limpiarNombre([
             solicitud['certificado'],
