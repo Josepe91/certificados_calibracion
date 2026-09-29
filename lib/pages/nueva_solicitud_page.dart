@@ -14,7 +14,6 @@ import '../data/excel_nube.dart';
 import '../data/solicitudes_storage.dart';
 import '../data/solicitudes_sync.dart';
 import '../data/inventario_data.dart';
-import '../data/inventario_sync.dart';
 import '../data/plantillas_initializer.dart';
 import '../data/emp_referencia.dart';
 import '../data/tecnico_profile.dart';
@@ -510,8 +509,8 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
       final archivoZip = ZipDecoder().decodeBytes(await zipFile.readAsBytes());
 
       final tempDir = await getTemporaryDirectory();
-      final carpetaFotos = Directory(p.join(
-          tempDir.path, 'btmc_fotos_vista', p.basenameWithoutExtension(nombreZip)));
+      final carpetaFotos = Directory(p.join(tempDir.path, 'btmc_fotos_vista',
+          p.basenameWithoutExtension(nombreZip)));
       await carpetaFotos.create(recursive: true);
 
       final extraidas = <File>[];
@@ -552,7 +551,8 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade600),
+            style:
+                ElevatedButton.styleFrom(backgroundColor: Colors.red.shade600),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Eliminar'),
           ),
@@ -631,8 +631,11 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
       ),
     );
     if (source == null) return;
-    final XFile? imagen =
-        await _picker.pickImage(source: source, imageQuality: 85);
+    // Lado mayor limitado a 2048 px: una foto de cámara sin límite pesa
+    // 3–6 MB y con mala señal en campo no alcanza a subir; así queda en
+    // ~300–600 KB y una placa/serial se sigue leyendo con zoom.
+    final XFile? imagen = await _picker.pickImage(
+        source: source, imageQuality: 85, maxWidth: 2048, maxHeight: 2048);
     if (imagen == null) return;
     setState(() => fotos.add(File(imagen.path)));
   }
@@ -766,9 +769,8 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
     // Nombre del técnico solo si hace falta firmar un "no pasa calibración"
     // (mismo criterio que fuera_de_servicio_por): quién guarda ahora mismo
     // queda como responsable de ese resultado.
-    final tecnicoActual = _puntosFallidos.isNotEmpty
-        ? await TecnicoProfile.obtenerNombre()
-        : '';
+    final tecnicoActual =
+        _puntosFallidos.isNotEmpty ? await TecnicoProfile.obtenerNombre() : '';
 
     final equipoFinal = {
       ...equipoSeleccionado!,
@@ -967,11 +969,10 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
       // no bloquear el cierre de esta pantalla si la subida tarda o no hay
       // señal; el archivo local ya quedó guardado arriba, así que nunca se
       // pierde trabajo por esto.
+      // Si falla queda marcada "sin subir" y se reintenta sola.
       unawaited(SolicitudesSync.subirSolicitud(
-        clienteId: InventarioSync.slug(InventarioData.cliente),
-        equipo: equipoFinal,
-        solicitud: solicitud,
-        fotos: fotos,
+        archivoJson: jsonFile,
+        fotos: List.of(fotos),
       ));
 
       if (mounted) {
@@ -1016,8 +1017,7 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
                   : SnackBarAction(
                       label: 'COMPARTIR',
                       textColor: Colors.white,
-                      onPressed: () =>
-                          Share.shareXFiles([XFile(xlsx.path)]),
+                      onPressed: () => Share.shareXFiles([XFile(xlsx.path)]),
                     ),
             ),
           );
@@ -1161,7 +1161,8 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
             child: TextField(
               controller: medicionControllers[s]?[pt],
               focusNode: _medicionFocusNodes[s]?[pt],
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
                 labelText: '$labelBase — Lectura ($unidad)',
                 border: const OutlineInputBorder(),
@@ -1267,10 +1268,10 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
                 if (query.isEmpty || query == seleccionadaNombre) {
                   return plantillas;
                 }
-                return plantillas.where((p) => TextUtils.quitarTildes(
-                        p.replaceAll('.xlsx', ''))
-                    .toLowerCase()
-                    .contains(query));
+                return plantillas.where((p) =>
+                    TextUtils.quitarTildes(p.replaceAll('.xlsx', ''))
+                        .toLowerCase()
+                        .contains(query));
               },
               displayStringForOption: (p) => p.replaceAll('.xlsx', ''),
               fieldViewBuilder: (context, controller, focusNode, onSubmitted) {

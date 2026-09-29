@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -40,6 +41,7 @@ class _SolicitudesPageState extends State<SolicitudesPage> {
   }
 
   Future<void> _cargarSolicitudes() async {
+    unawaited(SolicitudesSync.refrescarPendientesNube());
     final archivos = await SolicitudesStorage.listarPendientes();
 
     final List<_SolicitudMeta> resultado = [];
@@ -121,7 +123,8 @@ class _SolicitudesPageState extends State<SolicitudesPage> {
     if (!mounted) return;
     await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => NuevaSolicitudPage(archivoJson: archivo)),
+      MaterialPageRoute(
+          builder: (_) => NuevaSolicitudPage(archivoJson: archivo)),
     );
     if (mounted) await _cargarSolicitudes();
   }
@@ -184,137 +187,159 @@ class _SolicitudesPageState extends State<SolicitudesPage> {
                         ? 'No hay solicitudes guardadas'
                         : 'Sin resultados para "$_busqueda"'),
                   )
-                : ListView.builder(
-                    itemCount: mostrar.length,
-                    itemBuilder: (_, i) {
-                      final meta = mostrar[i];
-                      final enNube = meta.file == null;
+                : ValueListenableBuilder<Set<String>>(
+                    valueListenable: SolicitudesSync.pendientesNube,
+                    builder: (_, sinSubirNube, __) => ListView.builder(
+                      itemCount: mostrar.length,
+                      itemBuilder: (_, i) {
+                        final meta = mostrar[i];
+                        final enNube = meta.file == null;
+                        final sinSubir = !enNube &&
+                            sinSubirNube
+                                .contains(meta.file!.uri.pathSegments.last);
 
-                      final tarjeta = Card(
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: enNube
-                                ? Colors.orange.shade50
-                                : Colors.blue.shade50,
-                            child: Icon(
-                              enNube
-                                  ? Icons.cloud_download_outlined
-                                  : Icons.description,
-                              color: enNube
-                                  ? Colors.orange.shade700
-                                  : Colors.blue.shade700,
+                        final tarjeta = Card(
+                          margin: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: enNube
+                                  ? Colors.orange.shade50
+                                  : Colors.blue.shade50,
+                              child: Icon(
+                                enNube
+                                    ? Icons.cloud_download_outlined
+                                    : Icons.description,
+                                color: enNube
+                                    ? Colors.orange.shade700
+                                    : Colors.blue.shade700,
+                              ),
                             ),
-                          ),
-                          title: Text(
-                            meta.equipo.isNotEmpty
-                                ? meta.equipo
-                                : (meta.file?.uri.pathSegments.last ?? ''),
-                            style:
-                                const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (meta.cliente.isNotEmpty)
-                                Text(meta.cliente,
-                                    style: const TextStyle(fontSize: 12)),
-                              Row(
-                                children: [
-                                  if (meta.certificado.isNotEmpty) ...[
-                                    const Icon(Icons.badge_outlined,
-                                        size: 12, color: Colors.grey),
-                                    const SizedBox(width: 3),
-                                    Text(
-                                      meta.certificado,
-                                      style: const TextStyle(
-                                          fontSize: 12, color: Colors.grey),
-                                    ),
-                                    const SizedBox(width: 10),
+                            title: Text(
+                              meta.equipo.isNotEmpty
+                                  ? meta.equipo
+                                  : (meta.file?.uri.pathSegments.last ?? ''),
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (meta.cliente.isNotEmpty)
+                                  Text(meta.cliente,
+                                      style: const TextStyle(fontSize: 12)),
+                                Row(
+                                  children: [
+                                    if (meta.certificado.isNotEmpty) ...[
+                                      const Icon(Icons.badge_outlined,
+                                          size: 12, color: Colors.grey),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        meta.certificado,
+                                        style: const TextStyle(
+                                            fontSize: 12, color: Colors.grey),
+                                      ),
+                                      const SizedBox(width: 10),
+                                    ],
+                                    if (meta.fecha.isNotEmpty) ...[
+                                      const Icon(Icons.calendar_today,
+                                          size: 12, color: Colors.grey),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        meta.fecha,
+                                        style: const TextStyle(
+                                            fontSize: 12, color: Colors.grey),
+                                      ),
+                                    ],
                                   ],
-                                  if (meta.fecha.isNotEmpty) ...[
-                                    const Icon(Icons.calendar_today,
-                                        size: 12, color: Colors.grey),
-                                    const SizedBox(width: 3),
-                                    Text(
-                                      meta.fecha,
-                                      style: const TextStyle(
-                                          fontSize: 12, color: Colors.grey),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                              if (enNube)
-                                Text(
-                                  meta.actualizadoPor.isNotEmpty
-                                      ? 'En la nube · ${meta.actualizadoPor}'
-                                      : 'En la nube',
-                                  style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.orange.shade700),
                                 ),
-                            ],
-                          ),
-                          trailing: enNube
-                              ? const Icon(Icons.download)
-                              : const Icon(Icons.chevron_right),
-                          onTap: enNube
-                              ? () => _abrirDeNube(meta)
-                              : () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => NuevaSolicitudPage(
-                                          archivoJson: meta.file!),
-                                    ),
-                                  ).then((_) => _cargarSolicitudes());
-                                },
-                        ),
-                      );
-
-                      // Las de la nube todavía no tienen archivo local que
-                      // borrar — se descargan primero (tap normal) y desde
-                      // ahí sí se pueden eliminar como cualquier otra.
-                      if (enNube) return tarjeta;
-
-                      return Dismissible(
-                        key: Key(meta.file!.path),
-                        direction: DismissDirection.endToStart,
-                        background: Container(
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: 20),
-                          color: Colors.red,
-                          child: const Icon(Icons.delete, color: Colors.white),
-                        ),
-                        confirmDismiss: (_) async {
-                          return await showDialog<bool>(
-                            context: context,
-                            builder: (_) => AlertDialog(
-                              title: const Text('Eliminar solicitud'),
-                              content: Text(
-                                '¿Eliminar la solicitud de "${meta.equipo.isNotEmpty ? meta.equipo : meta.file!.uri.pathSegments.last}"?',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(context, false),
-                                  child: const Text('Cancelar'),
-                                ),
-                                ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red),
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: const Text('Eliminar'),
-                                ),
+                                if (sinSubir)
+                                  Row(
+                                    children: [
+                                      Icon(Icons.cloud_off,
+                                          size: 12, color: Colors.red.shade700),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        'Sin subir a la nube',
+                                        style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.red.shade700),
+                                      ),
+                                    ],
+                                  ),
+                                if (enNube)
+                                  Text(
+                                    meta.actualizadoPor.isNotEmpty
+                                        ? 'En la nube · ${meta.actualizadoPor}'
+                                        : 'En la nube',
+                                    style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.orange.shade700),
+                                  ),
                               ],
                             ),
-                          );
-                        },
-                        onDismissed: (_) => _eliminarSolicitud(meta),
-                        child: tarjeta,
-                      );
-                    },
+                            trailing: enNube
+                                ? const Icon(Icons.download)
+                                : const Icon(Icons.chevron_right),
+                            onTap: enNube
+                                ? () => _abrirDeNube(meta)
+                                : () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => NuevaSolicitudPage(
+                                            archivoJson: meta.file!),
+                                      ),
+                                    ).then((_) => _cargarSolicitudes());
+                                  },
+                          ),
+                        );
+
+                        // Las de la nube todavía no tienen archivo local que
+                        // borrar — se descargan primero (tap normal) y desde
+                        // ahí sí se pueden eliminar como cualquier otra.
+                        if (enNube) return tarjeta;
+
+                        return Dismissible(
+                          key: Key(meta.file!.path),
+                          direction: DismissDirection.endToStart,
+                          background: Container(
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.only(right: 20),
+                            color: Colors.red,
+                            child:
+                                const Icon(Icons.delete, color: Colors.white),
+                          ),
+                          confirmDismiss: (_) async {
+                            return await showDialog<bool>(
+                              context: context,
+                              builder: (_) => AlertDialog(
+                                title: const Text('Eliminar solicitud'),
+                                content: Text(
+                                  '¿Eliminar la solicitud de "${meta.equipo.isNotEmpty ? meta.equipo : meta.file!.uri.pathSegments.last}"?',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: const Text('Cancelar'),
+                                  ),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.red),
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    child: const Text('Eliminar'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                          onDismissed: (_) => _eliminarSolicitud(meta),
+                          child: tarjeta,
+                        );
+                      },
+                    ),
                   ),
           ),
         ],

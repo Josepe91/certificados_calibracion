@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
@@ -24,6 +25,19 @@ class PlantillasInitializer {
     final ruta = await rutaLocal;
     final dir = Directory(ruta);
     await dir.create(recursive: true);
+
+    // Las plantillas (~34 MB, ~340 archivos) solo cambian cuando se instala
+    // un build nuevo, así que se copian una vez por build y no en cada
+    // arranque. El marcador guarda el build que las copió; en debug se
+    // copian siempre porque los assets cambian sin que cambie el build.
+    final marcador = File(p.join(ruta, '.build_copiado'));
+    final build = (await PackageInfo.fromPlatform()).buildNumber;
+    if (!kDebugMode &&
+        await marcador.exists() &&
+        await File(p.join(ruta, 'index.json')).exists() &&
+        (await marcador.readAsString()).trim() == build) {
+      return;
+    }
 
     final indexStr =
         await rootBundle.loadString('assets/plantillas/index.json');
@@ -59,6 +73,9 @@ class PlantillasInitializer {
     }
 
     await Future.wait(futures);
+    // Se escribe al final: si la app se cierra a mitad de la copia, el
+    // próximo arranque la repite completa.
+    await marcador.writeAsString(build, flush: true);
   }
 
   static Future<void> _copiarAsset(String assetPath, File destino) async {

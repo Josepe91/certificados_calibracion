@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/solicitudes_storage.dart';
+import '../data/solicitudes_sync.dart';
 import '../data/tecnico_profile.dart';
 import '../data/version_app.dart';
 import '../utils/mayusculas_formatter.dart';
@@ -26,6 +27,8 @@ class _MainNavigationPageState extends State<MainNavigationPage>
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _pedirNombreTecnico();
       await _verificarVersion();
+      // Solicitudes que no alcanzaron a subir (sin señal) la última vez.
+      await SolicitudesSync.reintentarPendientes();
     });
   }
 
@@ -36,10 +39,14 @@ class _MainNavigationPageState extends State<MainNavigationPage>
   }
 
   // También al volver a la app (ej. después de dejarla en segundo plano
-  // un día entero): una versión nueva pudo publicarse mientras tanto.
+  // un día entero): una versión nueva pudo publicarse mientras tanto, y
+  // puede haber vuelto la señal para subir lo que quedó pendiente.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _verificarVersion();
+    if (state == AppLifecycleState.resumed) {
+      _verificarVersion();
+      SolicitudesSync.reintentarPendientes();
+    }
   }
 
   // Bloquea la app si este build es más viejo que config/app.version_minima

@@ -108,6 +108,21 @@ matching how the local ZIP is always rebuilt from scratch rather than
 diffed (see the `fotos` note above) — so cloud and local never disagree
 about which photos exist.
 
+**Subidas que fallan no se pierden:** `subirSolicitud(archivoJson:)` deja
+un marcador en `BTMC_SYNC/solicitudes/sin_subir_nube/<json basename>`
+(contenido = token del guardado) que solo se borra si la subida termina
+bien y el token sigue siendo el suyo — así una subida vieja que termina
+tarde no borra el marcador de un guardado más nuevo. `reintentarPendientes`
+sube lo marcado al abrir/volver a la app y tras cada subida exitosa (busca
+el JSON en pendientes/ y enviadas/; si no existe, borra el marcador). Todas
+las subidas pasan por una sola cola (`_enCola`) para que dos versiones de
+la misma solicitud nunca mezclen fotos en Storage. `SolicitudesPage` marca
+"Sin subir a la nube" con `pendientesNube`.
+
+**Plantillas:** `PlantillasInitializer` copia los ~34 MB de assets a disco
+solo cuando cambia el build (marcador `BTMC_PLANTILLAS/.build_copiado`);
+en debug copia siempre. Fotos: `pickImage` con lado mayor 2048 px.
+
 `SolicitudesPage` shows local solicitudes (as before) plus, for the active
 client, cloud solicitudes from OTHER technicians (`listarResumenNube`,
 deduped against local files by `claveEquipo` so a solicitud this device

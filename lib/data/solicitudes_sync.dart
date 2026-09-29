@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -39,38 +40,98 @@ class SolicitudesSync {
 
   static CollectionReference<Map<String, dynamic>> _solicitudesRef(
       String clienteId) {
-    return _db
-        .collection('clientes')
-        .doc(clienteId)
-        .collection('solicitudes');
+    return _db.collection('clientes').doc(clienteId).collection('solicitudes');
   }
 
   static Reference _carpetaFotos(String clienteId, String equipoClave) {
     return _storage.ref('clientes/$clienteId/solicitudes/$equipoClave');
   }
 
-  /// Sube una solicitud completa: primero reemplaza TODAS las fotos que
-  /// hubiera antes en su carpeta de Storage por las actuales (para que la
-  /// nube quede igual al ZIP local recién generado, nunca una mezcla de
-  /// fotos viejas y nuevas), luego escribe el documento con la URL de cada
-  /// una.
+  /// Nombres (basename del JSON) de las solicitudes guardadas en este
+  /// celular que todavía NO quedaron en la nube. SolicitudesPage lo usa
+  /// para marcarlas; sin esto una subida fallida (sin señal) pasaba en
+  /// silencio y el técnico creía que los demás ya la veían.
+  static final ValueNotifier<Set<String>> pendientesNube = ValueNotifier({});
+
+  // Todas las subidas van en fila: un reintento y un guardado nuevo de la
+  // MISMA solicitud no pueden borrar/subir fotos de la misma carpeta a la
+  // vez (quedaría una mezcla de fotos de las dos versiones).
+  static Future<void> _cola = Future.value();
+
+  static Future<T> _enCola<T>(Future<T> Function() tarea) {
+    final resultado = _cola.then((_) => tarea());
+    _cola = resultado.then((_) {}, onError: (_) {});
+    return resultado;
+  }
+
+  /// Un archivo por solicitud sin subir, con el mismo nombre del JSON
+  /// (contenido: token del guardado, ver [subirSolicitud]). Vive en su propia carpeta (no junto al JSON) porque el JSON
+  /// puede moverse de pendientes/ a enviadas/ antes de que haya señal.
+  static Future<Directory> _dirMarcadores() async {
+    final base = await getApplicationDocumentsDirectory();
+    final dir = Directory(
+        p.join(base.path, 'BTMC_SYNC', 'solicitudes', 'sin_subir_nube'));
+    if (!await dir.exists()) await dir.create(recursive: true);
+    return dir;
+  }
+
+  static Future<void> refrescarPendientesNube() async {
+    final dir = await _dirMarcadores();
+    pendientesNube.value =
+        dir.listSync().whereType<File>().map((f) => p.basename(f.path)).toSet();
+  }
+
+  /// Sube la solicitud guardada en [archivoJson]. Antes de intentar deja
+  /// un marcador "sin subir" que solo se borra si la subida termina bien;
+  /// si falla, [reintentarPendientes] la vuelve a subir sola (al abrir la
+  /// app, al volver a ella o tras la próxima subida exitosa).
   ///
-  /// No se relanza si falla — la solicitud YA quedó guardada localmente
-  /// antes de llamar aquí (mismo criterio que
-  /// `InventarioSync.upsertEquipo`), así que un fallo de red nunca le hace
-  /// perder el trabajo al técnico; solo se queda sin subir hasta el
-  /// próximo guardado con señal.
-  static Future<void> subirSolicitud({
-    required String clienteId,
-    required Map<String, dynamic> equipo,
-    required Map<String, dynamic> solicitud,
-    required List<File> fotos,
+  /// [fotos] son las que el técnico tiene en pantalla; si no se pasan se
+  /// sacan del ZIP de la solicitud (caso reintento). Nunca lanza: la
+  /// solicitud YA quedó guardada localmente antes de llamar aquí.
+  static Future<bool> subirSolicitud({
+    required File archivoJson,
+    List<File>? fotos,
   }) async {
+    final marcador = File(
+        p.join((await _dirMarcadores()).path, p.basename(archivoJson.path)));
+    // El contenido es un token por guardado: una subida anterior de esta
+    // misma solicitud que termine después solo borra el marcador si sigue
+    // siendo el suyo, no el de este guardado más nuevo.
+    await marcador.writeAsString('${DateTime.now().microsecondsSinceEpoch}');
+    await refrescarPendientesNube();
+
+    final ok = await _enCola(() => _subir(archivoJson, marcador, fotos));
+    await refrescarPendientesNube();
+    if (ok) unawaited(reintentarPendientes()); // hay señal: aprovecharla
+    return ok;
+  }
+
+  static Future<bool> _subir(
+      File archivoJson, File marcador, List<File>? fotos) async {
+    // Otro intento ya la subió mientras esperaba en la fila.
+    if (!await marcador.exists()) return true;
+    final token = await marcador.readAsString();
     try {
+      final Map<String, dynamic> solicitud =
+          jsonDecode(await archivoJson.readAsString());
+      final equipo =
+          Map<String, dynamic>.from((solicitud['equipo'] as Map?) ?? {});
+      final cliente = (solicitud['cliente'] as Map?)?['nombre']?.toString();
+      if (cliente == null || cliente.trim().isEmpty) {
+        await marcador.delete(); // sin cliente no hay adónde subirla
+        return false;
+      }
+      final clienteId = InventarioSync.slug(cliente);
+      fotos ??= await _fotosDelZip(archivoJson, solicitud);
+
       await _asegurarSesion();
       final clave = InventarioSync.claveEquipo(equipo);
       final carpeta = _carpetaFotos(clienteId, clave);
 
+      // Reemplaza TODAS las fotos de la carpeta por las actuales, para que
+      // la nube quede igual al ZIP local, nunca una mezcla de viejas y
+      // nuevas.
       final existentes = await carpeta.listAll();
       for (final item in existentes.items) {
         await item.delete();
@@ -91,9 +152,79 @@ class SolicitudesSync {
         ..['actualizado_en'] = FieldValue.serverTimestamp();
       if (tecnico.isNotEmpty) datos['actualizado_por'] = tecnico;
 
-      await _solicitudesRef(clienteId).doc(clave).set(datos);
+      // Si Firestore no confirma a tiempo, la escritura igual queda en su
+      // cola persistente y se envía sola al volver la señal: cuenta como
+      // subida (las fotos, que no tienen esa cola, ya subieron arriba).
+      await _solicitudesRef(clienteId)
+          .doc(clave)
+          .set(datos)
+          .timeout(const Duration(seconds: 20), onTimeout: () {});
+
+      if (await marcador.exists() && await marcador.readAsString() == token) {
+        await marcador.delete();
+      }
+      return true;
     } catch (e) {
-      debugPrint('SolicitudesSync.subirSolicitud: $e');
+      debugPrint('SolicitudesSync.subirSolicitud ${archivoJson.path}: $e');
+      return false;
+    }
+  }
+
+  static Future<List<File>> _fotosDelZip(
+      File archivoJson, Map<String, dynamic> solicitud) async {
+    final nombreZip = solicitud['fotos_zip']?.toString() ?? '';
+    if (nombreZip.isEmpty) return [];
+    final zip = File(p.join(archivoJson.parent.path, nombreZip));
+    if (!await zip.exists()) return [];
+
+    final tempDir = await getTemporaryDirectory();
+    final carpeta = Directory(p.join(
+        tempDir.path, 'btmc_reintento', p.basenameWithoutExtension(nombreZip)));
+    if (await carpeta.exists()) await carpeta.delete(recursive: true);
+    await carpeta.create(recursive: true);
+
+    final fotos = <File>[];
+    for (final entry
+        in ZipDecoder().decodeBytes(await zip.readAsBytes()).files) {
+      if (!entry.isFile) continue;
+      final destino = File(p.join(carpeta.path, p.basename(entry.name)));
+      await destino.writeAsBytes(entry.content as List<int>);
+      fotos.add(destino);
+    }
+    return fotos;
+  }
+
+  static bool _reintentando = false;
+
+  /// Vuelve a subir toda solicitud que quedó marcada "sin subir". Se
+  /// detiene en el primer fallo (sin señal, el resto también fallaría).
+  static Future<void> reintentarPendientes() async {
+    if (_reintentando) return;
+    _reintentando = true;
+    try {
+      final dirMarcadores = await _dirMarcadores();
+      final pendientes = await SolicitudesStorage.pendientesDir();
+      final enviadas = await SolicitudesStorage.enviadasDir();
+
+      for (final marcador in dirMarcadores.listSync().whereType<File>()) {
+        final nombre = p.basename(marcador.path);
+        final json = [pendientes, enviadas]
+            .map((d) => File(p.join(d.path, nombre)))
+            .where((f) => f.existsSync())
+            .firstOrNull;
+        if (json == null) {
+          // Se borró o se renombró (cambió el certificado): el guardado
+          // que la renombró ya dejó su propio marcador con el nombre nuevo.
+          await marcador.delete();
+          continue;
+        }
+        if (!await _enCola(() => _subir(json, marcador, null))) break;
+      }
+    } catch (e) {
+      debugPrint('SolicitudesSync.reintentarPendientes: $e');
+    } finally {
+      _reintentando = false;
+      await refrescarPendientesNube();
     }
   }
 
