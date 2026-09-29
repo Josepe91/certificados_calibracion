@@ -113,7 +113,9 @@ un marcador en `BTMC_SYNC/solicitudes/sin_subir_nube/<json basename>`
 (contenido = token del guardado) que solo se borra si la subida termina
 bien y el token sigue siendo el suyo — así una subida vieja que termina
 tarde no borra el marcador de un guardado más nuevo. `reintentarPendientes`
-sube lo marcado al abrir/volver a la app y tras cada subida exitosa (busca
+sube lo marcado al abrir/volver a la app, al volver la red
+(`connectivity_plus` en `MainNavigationPage`), cada 5 min mientras haya
+pendientes (señal débil no dispara cambio de red) y tras cada subida exitosa (busca
 el JSON en pendientes/ y enviadas/; si no existe, borra el marcador). Todas
 las subidas pasan por una sola cola (`_enCola`) para que dos versiones de
 la misma solicitud nunca mezclen fotos en Storage. `SolicitudesPage` marca
@@ -265,7 +267,9 @@ equipo, K–O fila 2 cliente) + Observaciones/Estado en I–J, así se puede
 reimportar tal cual.
 
 **Excel en la nube** (`lib/data/excel_nube.dart`): al guardar una
-solicitud, el .xlsx se sube solo (unawaited) a
+solicitud, el .xlsx se sube DENTRO de `SolicitudesSync._subir` (mismo
+marcador/reintento que datos+fotos; si el Excel no se puede generar no se
+reintenta, es fallo local) a
 `certificados/{clienteId}/{claveEquipo}/<CERT> - <EQUIPO> - <SERIE>.xlsx` en
 Storage; la carpeta usa `claveEquipo` (no el id local) por la misma razón
 que las fotos, y se vacía antes de subir para no dejar el Excel con un

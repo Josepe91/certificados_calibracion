@@ -11,6 +11,8 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../utils/text_utils.dart';
+import 'certificado_excel.dart';
+import 'excel_nube.dart';
 import 'inventario_sync.dart';
 import 'solicitudes_storage.dart';
 import 'tecnico_profile.dart';
@@ -159,6 +161,21 @@ class SolicitudesSync {
           .doc(clave)
           .set(datos)
           .timeout(const Duration(seconds: 20), onTimeout: () {});
+
+      // Certificado en Excel para la oficina, en el mismo intento: así el
+      // reintento automático también lo cubre y no depende del botón
+      // "Subir certificados" de Inicio.
+      final rutaXlsx = File(CertificadoExcel.rutaCertificado(archivoJson.path));
+      final xlsx = await rutaXlsx.exists()
+          ? rutaXlsx
+          : await CertificadoExcel.generarDesdeSolicitud(archivoJson);
+      // Si el Excel no se puede generar (plantilla faltante/dañada) es un
+      // fallo local que reintentar no arregla: no se deja la solicitud
+      // atascada por eso, ni frena a las demás en la fila.
+      if (xlsx != null &&
+          !await ExcelNube.subirCertificado(archivoJson, xlsx)) {
+        return false;
+      }
 
       if (await marcador.exists() && await marcador.readAsString() == token) {
         await marcador.delete();

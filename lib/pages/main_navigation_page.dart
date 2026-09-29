@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 
 import '../data/solicitudes_storage.dart';
@@ -19,11 +22,27 @@ class _MainNavigationPageState extends State<MainNavigationPage>
     with WidgetsBindingObserver {
   int _index = 0;
   bool _bloqueoVisible = false;
+  StreamSubscription<List<ConnectivityResult>>? _conexion;
+  Timer? _reintentoPeriodico;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Reintenta subir solicitudes pendientes apenas vuelve la red...
+    _conexion = Connectivity().onConnectivityChanged.listen((r) {
+      if (!r.contains(ConnectivityResult.none)) {
+        SolicitudesSync.reintentarPendientes();
+      }
+    });
+    // ...y cada 5 min mientras haya pendientes: con señal débil el celular
+    // puede estar "conectado" todo el tiempo sin que la subida pase, y ese
+    // caso no dispara ningún cambio de conectividad.
+    _reintentoPeriodico = Timer.periodic(const Duration(minutes: 5), (_) {
+      if (SolicitudesSync.pendientesNube.value.isNotEmpty) {
+        SolicitudesSync.reintentarPendientes();
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _pedirNombreTecnico();
       await _verificarVersion();
@@ -35,6 +54,8 @@ class _MainNavigationPageState extends State<MainNavigationPage>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _conexion?.cancel();
+    _reintentoPeriodico?.cancel();
     super.dispose();
   }
 
