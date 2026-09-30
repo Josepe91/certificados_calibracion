@@ -823,8 +823,11 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
     final jsonFile = File(p.join(dir.path, '$baseNombre.json'));
 
     final zipFile = File(p.join(dir.path, '${baseNombre}_fotos.zip'));
+    // Junto al JSON original (puede estar en enviadas/), no en pendientes/:
+    // si no, al editar una enviada su ZIP quedaba huérfano allá.
     final zipAntiguo = _fotosZipExistente.isNotEmpty
-        ? File(p.join(dir.path, _fotosZipExistente))
+        ? File(
+            p.join((jsonFileAntiguo?.parent ?? dir).path, _fotosZipExistente))
         : null;
 
     if (mounted) {

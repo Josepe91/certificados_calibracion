@@ -143,7 +143,12 @@ la misma solicitud nunca mezclen fotos en Storage. `SolicitudesPage` marca
 solo cuando cambia el build (marcador `BTMC_PLANTILLAS/.build_copiado`);
 en debug copia siempre. Fotos: `pickImage` con lado mayor 2048 px.
 
-`SolicitudesPage` shows local solicitudes (as before) plus, for the active
+`SolicitudesPage` lists pendientes/ AND enviadas/ (since 2026-09-30 — before,
+enviadas were hidden and "Subir certificados" made solicitudes vanish from
+the app), with filter chips Todas / Por subir / Enviadas / Otros técnicos.
+The pending badge (`contadorNotifier`) counts only pendientes/. Editing an
+enviada saves it into pendientes/ and deletes the enviadas/ JSON+ZIP+xlsx.
+It also shows local solicitudes (as before) plus, for the active
 client, cloud solicitudes from OTHER technicians (`listarResumenNube`,
 deduped against local files by `claveEquipo` so a solicitud this device
 already has never appears twice, possibly with unsynced edits shadowed by a

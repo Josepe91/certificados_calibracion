@@ -23,6 +23,7 @@ class _SolicitudesPageState extends State<SolicitudesPage> {
   bool cargando = true;
   final TextEditingController _searchController = TextEditingController();
   String _busqueda = '';
+  _Filtro _filtro = _Filtro.todas;
 
   @override
   void initState() {
@@ -67,19 +68,33 @@ class _SolicitudesPageState extends State<SolicitudesPage> {
       }
     }
 
-    // Las ya archivadas en enviadas/ también son de este celular: sin
-    // esto, después de "Subir certificados" reaparecían abajo como si
-    // fueran de otro técnico y tocarlas las volvía a bajar a pendientes/.
+    // Las ya archivadas en enviadas/ (tras "Subir certificados") también
+    // se listan: antes solo se usaban para no duplicar las de la nube y
+    // desaparecían de la app — el técnico ya no podía ver el historial de
+    // lo que calibró. Tocarlas abre la misma copia local; al volver a
+    // guardarla pasa a pendientes/ (hay que subir el certificado de nuevo).
     for (final f in (await SolicitudesStorage.enviadasDir())
         .listSync()
         .whereType<File>()
         .where((f) => f.path.toLowerCase().endsWith('.json'))) {
       try {
-        final equipoData = jsonDecode(await f.readAsString())['equipo'];
+        final data = jsonDecode(await f.readAsString());
+        final equipoData = data['equipo'];
         if (equipoData is Map<String, dynamic>) {
           clavesLocales.add(InventarioSync.docId(equipoData));
         }
-      } catch (_) {}
+        resultado.add(_SolicitudMeta(
+          file: f,
+          enviada: true,
+          equipo: data['equipo']?['nombre']?.toString() ?? '',
+          serie: data['equipo']?['serie']?.toString() ?? '',
+          cliente: data['cliente']?['nombre']?.toString() ?? '',
+          fecha: data['fecha']?.toString() ?? '',
+          certificado: data['certificado']?.toString() ?? '',
+        ));
+      } catch (_) {
+        resultado.add(_SolicitudMeta(file: f, enviada: true));
+      }
     }
 
     // Solicitudes en la nube del cliente activo hechas por CUALQUIER
@@ -111,7 +126,7 @@ class _SolicitudesPageState extends State<SolicitudesPage> {
       cargando = false;
     });
     SolicitudesStorage.contadorNotifier.value =
-        resultado.where((s) => s.file != null).length;
+        resultado.where((s) => s.file != null && !s.enviada).length;
   }
 
   Future<void> _abrirDeNube(_SolicitudMeta meta) async {
@@ -160,7 +175,7 @@ class _SolicitudesPageState extends State<SolicitudesPage> {
 
     setState(() => solicitudes.removeWhere((s) => s.file?.path == f.path));
     SolicitudesStorage.contadorNotifier.value =
-        solicitudes.where((s) => s.file != null).length;
+        solicitudes.where((s) => s.file != null && !s.enviada).length;
   }
 
   @override
@@ -170,14 +185,15 @@ class _SolicitudesPageState extends State<SolicitudesPage> {
     }
 
     String norm(String v) => TextUtils.quitarTildes(v).toLowerCase();
-    final mostrar = _busqueda.isEmpty
-        ? solicitudes
-        : solicitudes
-            .where((s) =>
-                norm(s.certificado).contains(_busqueda) ||
-                norm(s.serie).contains(_busqueda) ||
-                norm(s.equipo).contains(_busqueda))
-            .toList();
+    final mostrar = solicitudes
+        .where((s) => _filtro == _Filtro.todas || _filtroDe(s) == _filtro)
+        .where((s) =>
+            _busqueda.isEmpty ||
+            norm(s.certificado).contains(_busqueda) ||
+            norm(s.serie).contains(_busqueda) ||
+            norm(s.equipo).contains(_busqueda) ||
+            norm(s.cliente).contains(_busqueda))
+        .toList();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Solicitudes creadas')),
@@ -188,19 +204,48 @@ class _SolicitudesPageState extends State<SolicitudesPage> {
             child: TextField(
               controller: _searchController,
               decoration: const InputDecoration(
-                labelText: 'Buscar por certificado o serie',
+                labelText: 'Buscar por certificado, serie, equipo o cliente',
                 prefixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(),
                 isDense: true,
               ),
             ),
           ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              children: [
+                for (final f in _Filtro.values)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: ChoiceChip(
+                      label: Text(
+                          '${f.etiqueta} (${solicitudes.where((s) => f == _Filtro.todas || _filtroDe(s) == f).length})'),
+                      selected: _filtro == f,
+                      onSelected: (_) => setState(() => _filtro = f),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          if (InventarioData.cliente.isEmpty)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(12, 4, 12, 0),
+              child: Text(
+                'Abre un cliente en Inventario para ver también las '
+                'solicitudes de otros técnicos.',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ),
           Expanded(
             child: mostrar.isEmpty
                 ? Center(
                     child: Text(solicitudes.isEmpty
                         ? 'No hay solicitudes guardadas'
-                        : 'Sin resultados para "$_busqueda"'),
+                        : _busqueda.isEmpty
+                            ? 'No hay solicitudes en "${_filtro.etiqueta}"'
+                            : 'Sin resultados para "$_busqueda"'),
                   )
                 : ValueListenableBuilder<Set<String>>(
                     valueListenable: SolicitudesSync.pendientesNube,
@@ -210,6 +255,7 @@ class _SolicitudesPageState extends State<SolicitudesPage> {
                         final meta = mostrar[i];
                         final enNube = meta.file == null;
                         final sinSubir = !enNube &&
+                            !meta.enviada &&
                             sinSubirNube
                                 .contains(meta.file!.uri.pathSegments.last);
 
@@ -220,14 +266,20 @@ class _SolicitudesPageState extends State<SolicitudesPage> {
                             leading: CircleAvatar(
                               backgroundColor: enNube
                                   ? Colors.orange.shade50
-                                  : Colors.blue.shade50,
+                                  : meta.enviada
+                                      ? Colors.green.shade50
+                                      : Colors.blue.shade50,
                               child: Icon(
                                 enNube
                                     ? Icons.cloud_download_outlined
-                                    : Icons.description,
+                                    : meta.enviada
+                                        ? Icons.cloud_done_outlined
+                                        : Icons.description,
                                 color: enNube
                                     ? Colors.orange.shade700
-                                    : Colors.blue.shade700,
+                                    : meta.enviada
+                                        ? Colors.green.shade700
+                                        : Colors.blue.shade700,
                               ),
                             ),
                             title: Text(
@@ -282,6 +334,13 @@ class _SolicitudesPageState extends State<SolicitudesPage> {
                                       ),
                                     ],
                                   ),
+                                if (meta.enviada)
+                                  Text(
+                                    'Certificado enviado',
+                                    style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.green.shade700),
+                                  ),
                                 if (enNube)
                                   Text(
                                     meta.actualizadoPor.isNotEmpty
@@ -331,7 +390,8 @@ class _SolicitudesPageState extends State<SolicitudesPage> {
                               builder: (_) => AlertDialog(
                                 title: const Text('Eliminar solicitud'),
                                 content: Text(
-                                  '¿Eliminar la solicitud de "${meta.equipo.isNotEmpty ? meta.equipo : meta.file!.uri.pathSegments.last}"?',
+                                  '¿Eliminar la solicitud de "${meta.equipo.isNotEmpty ? meta.equipo : meta.file!.uri.pathSegments.last}"?'
+                                  '${meta.enviada ? '\n\nSolo se borra de este celular; la copia en la nube se conserva.' : ''}',
                                 ),
                                 actions: [
                                   TextButton(
@@ -363,11 +423,30 @@ class _SolicitudesPageState extends State<SolicitudesPage> {
   }
 }
 
+enum _Filtro {
+  todas('Todas'),
+  porSubir('Por subir'),
+  enviadas('Enviadas'),
+  otrosTecnicos('Otros técnicos');
+
+  final String etiqueta;
+  const _Filtro(this.etiqueta);
+}
+
+_Filtro _filtroDe(_SolicitudMeta s) => s.file == null
+    ? _Filtro.otrosTecnicos
+    : s.enviada
+        ? _Filtro.enviadas
+        : _Filtro.porSubir;
+
 /// Metadata de una solicitud, local (archivo en disco) o de la nube (sin
 /// descargar todavía — `file` null, `equipoClave`/`clienteIdNube` presentes
 /// en su lugar).
 class _SolicitudMeta {
   final File? file;
+
+  /// true si el archivo está en enviadas/ (certificado ya subido).
+  final bool enviada;
   final String? equipoClave;
   final String? clienteIdNube;
   final String equipo;
@@ -379,6 +458,7 @@ class _SolicitudMeta {
 
   const _SolicitudMeta({
     this.file,
+    this.enviada = false,
     this.equipoClave,
     this.clienteIdNube,
     this.equipo = '',
