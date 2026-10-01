@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../data/btmc_storage.dart';
 import '../data/drive_sync.dart';
-import '../data/excel_nube.dart';
 import '../data/version_app.dart';
 import '../data/inventario_data.dart';
 import '../data/solicitudes_storage.dart';
@@ -201,23 +200,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Future<void> _subirInventarios(BuildContext context) async {
-    final (ok, fallidos) = await _conProgreso(
-        context, 'Subiendo inventarios...', ExcelNube.subirInventarios);
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(ok == 0 && fallidos == 0
-            ? 'No hay inventarios para subir'
-            : fallidos == 0
-                ? '$ok inventario(s) subido(s) a la nube ✓'
-                : '$ok subido(s) · $fallidos sin subir (revisa la señal)'),
-        backgroundColor: fallidos == 0 ? null : Colors.orange.shade700,
-        duration: const Duration(seconds: 4),
-      ),
-    );
-  }
-
   Future<T> _conProgreso<T>(
       BuildContext context, String texto, Future<T> Function() tarea) async {
     showDialog(
@@ -331,29 +313,20 @@ class _HomePageState extends State<HomePage> {
                       ),
               ),
 
-              // SUBIR INVENTARIO (Excel) A LA NUBE
+              // COMPARTIR (Drive, WhatsApp, correo). Los datos ya suben solos
+              // a la nube; los Excel se generan aquí al compartir.
               _BotonPrincipal(
-                icon: Icons.inventory_2,
-                texto: 'Subir inventario a la nube',
-                onTap: () => _subirInventarios(context),
+                icon: Icons.share,
+                texto: 'Compartir solicitudes',
+                onTap: () => _compartirSolicitudes(context),
               ),
 
-              // Compartir por otra app (Drive, WhatsApp, correo): el flujo
-              // anterior, por si se necesita mandar los Excel a alguien.
-              Wrap(
-                alignment: WrapAlignment.center,
-                children: [
-                  TextButton.icon(
-                    icon: const Icon(Icons.share, size: 18),
-                    label: const Text('Compartir solicitudes'),
-                    onPressed: () => _compartirSolicitudes(context),
-                  ),
-                  TextButton.icon(
-                    icon: const Icon(Icons.share, size: 18),
-                    label: const Text('Compartir inventario'),
-                    onPressed: () => _exportarInventario(context),
-                  ),
-                ],
+              const SizedBox(height: 12),
+
+              _BotonPrincipal(
+                icon: Icons.inventory_2,
+                texto: 'Compartir inventario',
+                onTap: () => _exportarInventario(context),
               ),
 
               const Spacer(),

@@ -4,10 +4,7 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
-import 'inventario_excel.dart';
 import 'inventario_sync.dart';
 import 'tecnico_profile.dart';
 
@@ -17,7 +14,6 @@ import 'tecnico_profile.dart';
 ///
 /// Rutas en Storage:
 /// - `certificados/{clienteId}/{docId}/<CERT> - <EQUIPO> - <SERIE>.xlsx`
-/// - `inventarios/{clienteId}/INVENTARIO <CLIENTE>.xlsx`
 ///
 /// La carpeta de cada certificado usa `InventarioSync.docId` (mismo
 /// criterio que las fotos en SolicitudesSync): dos técnicos que certifican
@@ -81,38 +77,6 @@ class ExcelNube {
       debugPrint('ExcelNube.subirCertificado ${archivoJson.path}: $e');
       return false;
     }
-  }
-
-  /// Genera y sube el Excel de inventario de cada cliente guardado en el
-  /// celular. Retorna (subidos, fallidos).
-  static Future<(int, int)> subirInventarios() async {
-    final base = await getApplicationDocumentsDirectory();
-    final dir = Directory(p.join(base.path, 'BTMC_SYNC', 'inventarios'));
-    if (!await dir.exists()) return (0, 0);
-
-    var ok = 0, fallidos = 0;
-    for (final f in dir.listSync().whereType<File>()) {
-      if (!f.path.toLowerCase().endsWith('.json')) continue;
-      try {
-        final Map<String, dynamic> data = jsonDecode(await f.readAsString());
-        final cliente = (data['cliente'] as Map?)?['nombre']?.toString() ?? '';
-        if (cliente.trim().isEmpty) continue;
-
-        await _asegurarSesion();
-        final ref = _storage.ref('inventarios/'
-            '${InventarioSync.slug(cliente)}/'
-            'INVENTARIO ${_limpiarNombre([cliente])}.xlsx');
-        await ref.putData(
-          InventarioExcel.generar(data),
-          SettableMetadata(contentType: _tipoXlsx),
-        );
-        ok++;
-      } catch (e) {
-        debugPrint('ExcelNube.subirInventarios ${f.path}: $e');
-        fallidos++;
-      }
-    }
-    return (ok, fallidos);
   }
 
   /// Nombre de archivo legible ("JS0001-26 - BAÑO MARIA - 12345") sin

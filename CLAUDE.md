@@ -303,10 +303,11 @@ la nube las fotos de solicitudes cuya subida automática había fallado. En
 su lugar Inicio muestra un aviso con `SolicitudesSync.pendientesNube`
 ("N sin subir · Reintentar") solo si hay marcadores. "Compartir
 solicitudes" pregunta si incluir enviadas de hoy+ayer o de 7 días (por
-fecha del JSON) además de las pendientes. "Subir inventario" sube
-`inventarios/{clienteId}/INVENTARIO <CLIENTE>.xlsx`. Compartir por
-Drive/WhatsApp sigue disponible como botón secundario. La oficina descarga
-desde Firebase console → Storage.
+fecha del JSON) además de las pendientes. También se quitó "Subir
+inventario a la nube" (v1.1.0+8): el inventario ya sincroniza solo por
+Firestore y la oficina saca el Excel con "Compartir inventario"; la
+carpeta `inventarios/` de Storage ya no se actualiza. Inicio queda con
+dos botones principales: Compartir solicitudes y Compartir inventario.
 
 ## Releases
 
