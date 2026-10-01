@@ -68,7 +68,7 @@ class _SolicitudesPageState extends State<SolicitudesPage> {
       }
     }
 
-    // Las ya archivadas en enviadas/ (tras "Subir certificados") también
+    // Las ya archivadas en enviadas/ (tras compartirlas a Drive) también
     // se listan: antes solo se usaban para no duplicar las de la nube y
     // desaparecían de la app — el técnico ya no podía ver el historial de
     // lo que calibró. Tocarlas abre la misma copia local; al volver a

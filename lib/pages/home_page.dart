@@ -6,6 +6,7 @@ import '../data/excel_nube.dart';
 import '../data/version_app.dart';
 import '../data/inventario_data.dart';
 import '../data/solicitudes_storage.dart';
+import '../data/solicitudes_sync.dart';
 import 'solicitudes_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -105,14 +106,43 @@ class _HomePageState extends State<HomePage> {
   // COMPARTIR SOLICITUDES
   // =========================
   Future<void> _compartirSolicitudes(BuildContext context) async {
-    final haySolicitudes = await DriveSync.syncSolicitudes();
+    // Las ya subidas a la nube están en enviadas/ y antes no había forma de
+    // mandarlas a Drive sin abrir y guardar una por una.
+    final dias = await showDialog<int>(
+      context: context,
+      builder: (_) => SimpleDialog(
+        title: const Text('¿Qué solicitudes compartir?'),
+        children: [
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, 0),
+            child: const Text('Solo las pendientes'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, 2),
+            child: const Text('Pendientes + enviadas de hoy y ayer'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, 7),
+            child: const Text('Pendientes + enviadas de los últimos 7 días'),
+          ),
+        ],
+      ),
+    );
+    if (dias == null || !context.mounted) return;
+
+    final hoy = DateTime.now();
+    final haySolicitudes = await DriveSync.syncSolicitudes(
+      enviadasDesde: dias == 0
+          ? null
+          : DateTime(hoy.year, hoy.month, hoy.day - (dias - 1)),
+    );
 
     if (!context.mounted) return;
 
     if (!haySolicitudes) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('No hay solicitudes pendientes para compartir')),
+            content: Text('No hay solicitudes para compartir')),
       );
       return;
     }
@@ -154,27 +184,18 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // =========================
-  // SUBIR A LA NUBE (Firebase Storage, ver lib/data/excel_nube.dart)
-  // =========================
-  Future<void> _subirCertificados(BuildContext context) async {
-    if (SolicitudesStorage.contadorNotifier.value == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No hay solicitudes pendientes')),
-      );
-      return;
-    }
-    final (ok, fallidas) = await _conProgreso(
-        context, 'Subiendo certificados...', ExcelNube.subirPendientes);
+  Future<void> _reintentarSubidas(BuildContext context) async {
+    await _conProgreso(context, 'Subiendo solicitudes...',
+        SolicitudesSync.reintentarPendientes);
     if (!context.mounted) return;
+    final quedan = SolicitudesSync.pendientesNube.value.length;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(fallidas == 0
-            ? '$ok certificado(s) subido(s) a la nube ✓'
-            : '$ok subido(s) · $fallidas sin subir (revisa la señal e '
-                'intenta de nuevo)'),
+        content: Text(quedan == 0
+            ? 'Todas las solicitudes están en la nube ✓'
+            : '$quedan sin subir (revisa la señal e intenta de nuevo)'),
         backgroundColor:
-            fallidas == 0 ? Colors.green.shade700 : Colors.orange.shade700,
+            quedan == 0 ? Colors.green.shade700 : Colors.orange.shade700,
         duration: const Duration(seconds: 5),
       ),
     );
@@ -285,14 +306,30 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 12),
 
-              // SUBIR CERTIFICADOS (Excel) A LA NUBE
-              _BotonPrincipal(
-                icon: Icons.cloud_upload,
-                texto: 'Subir certificados a la nube',
-                onTap: () => _subirCertificados(context),
+              // Las solicitudes suben solas a la nube al guardarse
+              // (SolicitudesSync); esto solo aparece si alguna se atascó.
+              ValueListenableBuilder<Set<String>>(
+                valueListenable: SolicitudesSync.pendientesNube,
+                builder: (_, pendientes, __) => pendientes.isEmpty
+                    ? const SizedBox.shrink()
+                    : Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Material(
+                          color: Colors.orange.shade100,
+                          borderRadius: BorderRadius.circular(12),
+                          child: ListTile(
+                            leading: Icon(Icons.cloud_off,
+                                color: Colors.orange.shade800),
+                            title: Text(
+                                '${pendientes.length} solicitud(es) sin subir a la nube'),
+                            trailing: TextButton(
+                              onPressed: () => _reintentarSubidas(context),
+                              child: const Text('Reintentar'),
+                            ),
+                          ),
+                        ),
+                      ),
               ),
-
-              const SizedBox(height: 12),
 
               // SUBIR INVENTARIO (Excel) A LA NUBE
               _BotonPrincipal(

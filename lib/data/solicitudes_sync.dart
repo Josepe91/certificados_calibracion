@@ -163,8 +163,8 @@ class SolicitudesSync {
           .timeout(const Duration(seconds: 20), onTimeout: () {});
 
       // Certificado en Excel para la oficina, en el mismo intento: así el
-      // reintento automático también lo cubre y no depende del botón
-      // "Subir certificados" de Inicio.
+      // reintento automático también lo cubre (ya no hay botón manual de
+      // subida en Inicio).
       final rutaXlsx = File(CertificadoExcel.rutaCertificado(archivoJson.path));
       final xlsx = await rutaXlsx.exists()
           ? rutaXlsx

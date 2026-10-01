@@ -20,29 +20,48 @@ class DriveSync {
   // lo tienen las solicitudes bajadas de la nube (que llegan solo como
   // JSON+ZIP) o guardadas con una versión vieja de la app. Si una
   // solicitud no tiene plantilla, se manda su JSON para no perderla.
+  // Con [enviadasDesde] también incluye las de enviadas/ guardadas desde esa
+  // fecha (ya subidas a la nube), para poder mandarlas a Drive en bloque.
   // Retorna true si había archivos para compartir, false si no había nada.
   // ===============================
-  static Future<bool> syncSolicitudes() async {
+  static Future<bool> syncSolicitudes({DateTime? enviadasDesde}) async {
     final List<File> filesToSend = [];
 
-    final pendientesDir = await SolicitudesStorage.pendientesDir();
+    bool esJson(File f) => f.path.toLowerCase().endsWith('.json');
+    final jsons = <File>[
+      ...(await SolicitudesStorage.pendientesDir())
+          .listSync()
+          .whereType<File>()
+          .where(esJson),
+      // La fecha del JSON es la del último guardado (moverAEnviadas solo
+      // lo renombra, no la cambia).
+      if (enviadasDesde != null)
+        ...(await SolicitudesStorage.enviadasDir())
+            .listSync()
+            .whereType<File>()
+            .where((f) =>
+                esJson(f) && f.lastModifiedSync().isAfter(enviadasDesde)),
+    ];
 
-    if (await pendientesDir.exists()) {
-      for (final f in pendientesDir.listSync()) {
-        if (f is! File) continue;
-        final ruta = f.path.toLowerCase();
-        if (ruta.endsWith('.zip')) {
-          filesToSend.add(f);
-        } else if (ruta.endsWith('.json')) {
-          File? xlsx;
-          try {
-            xlsx = await CertificadoExcel.generarDesdeSolicitud(f);
-          } catch (e) {
-            debugPrint('DriveSync: error generando certificado ${f.path}: $e');
-          }
-          filesToSend.add(xlsx ?? f);
-        }
+    for (final f in jsons) {
+      File? xlsx;
+      try {
+        xlsx = await CertificadoExcel.generarDesdeSolicitud(f);
+      } catch (e) {
+        debugPrint('DriveSync: error generando certificado ${f.path}: $e');
       }
+      filesToSend.add(xlsx ?? f);
+      var nombreZip = '';
+      try {
+        nombreZip = (jsonDecode(await f.readAsString())['fotos_zip'] ?? '')
+            .toString();
+      } catch (_) {}
+      if (nombreZip.isEmpty) {
+        nombreZip = p.basename(f.path)
+            .replaceAll(RegExp(r'\.json$', caseSensitive: false), '_fotos.zip');
+      }
+      final zip = File(p.join(f.parent.path, nombreZip));
+      if (await zip.exists()) filesToSend.add(zip);
     }
 
     if (filesToSend.isEmpty) return false;

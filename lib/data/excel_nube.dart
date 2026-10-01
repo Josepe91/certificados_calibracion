@@ -7,10 +7,8 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-import 'certificado_excel.dart';
 import 'inventario_excel.dart';
 import 'inventario_sync.dart';
-import 'solicitudes_storage.dart';
 import 'tecnico_profile.dart';
 
 /// Sube los Excel (certificados e inventarios) a Firebase Storage, para
@@ -83,42 +81,6 @@ class ExcelNube {
       debugPrint('ExcelNube.subirCertificado ${archivoJson.path}: $e');
       return false;
     }
-  }
-
-  /// Genera y sube el certificado de TODAS las solicitudes pendientes; las
-  /// que suben bien pasan a `enviadas/` (JSON + ZIP de fotos + .xlsx).
-  /// Retorna (subidas, fallidas).
-  static Future<(int, int)> subirPendientes() async {
-    final dir = await SolicitudesStorage.pendientesDir();
-    final jsons = dir
-        .listSync()
-        .whereType<File>()
-        .where((f) => f.path.toLowerCase().endsWith('.json'))
-        .toList();
-
-    var ok = 0, fallidas = 0;
-    for (final json in jsons) {
-      File? xlsx;
-      try {
-        // Siempre se regenera: la solicitud pudo editarse, o venir de la
-        // nube sin .xlsx (ver SolicitudesSync.descargarComoArchivoLocal).
-        xlsx = await CertificadoExcel.generarDesdeSolicitud(json);
-      } catch (e) {
-        debugPrint('ExcelNube: error generando ${json.path}: $e');
-      }
-      if (xlsx == null || !await subirCertificado(json, xlsx)) {
-        fallidas++;
-        continue;
-      }
-      ok++;
-      final zip = File(json.path
-          .replaceAll(RegExp(r'\.json$', caseSensitive: false), '_fotos.zip'));
-      for (final f in [json, zip, xlsx]) {
-        if (await f.exists()) await SolicitudesStorage.moverAEnviadas(f);
-      }
-    }
-    await SolicitudesStorage.refrescarContador();
-    return (ok, fallidas);
   }
 
   /// Genera y sube el Excel de inventario de cada cliente guardado en el

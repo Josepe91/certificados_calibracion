@@ -296,9 +296,14 @@ reintenta, es fallo local) a
 `certificados/{clienteId}/{claveEquipo}/<CERT> - <EQUIPO> - <SERIE>.xlsx` en
 Storage; la carpeta usa `claveEquipo` (no el id local) por la misma razón
 que las fotos, y se vacía antes de subir para no dejar el Excel con un
-número de certificado viejo. "Subir certificados a la nube" (Inicio)
-regenera + sube todas las pendientes y mueve a `enviadas/` SOLO las que
-subieron bien (sin confirmación manual). "Subir inventario" sube
+número de certificado viejo. Desde v1.1.0+7 NO hay botón "Subir
+certificados a la nube": subía solo el Excel (las fotos no) y movía todo a
+`enviadas/`, de donde no se podía compartir a Drive — así se perdieron en
+la nube las fotos de solicitudes cuya subida automática había fallado. En
+su lugar Inicio muestra un aviso con `SolicitudesSync.pendientesNube`
+("N sin subir · Reintentar") solo si hay marcadores. "Compartir
+solicitudes" pregunta si incluir enviadas de hoy+ayer o de 7 días (por
+fecha del JSON) además de las pendientes. "Subir inventario" sube
 `inventarios/{clienteId}/INVENTARIO <CLIENTE>.xlsx`. Compartir por
 Drive/WhatsApp sigue disponible como botón secundario. La oficina descarga
 desde Firebase console → Storage.
