@@ -153,9 +153,12 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
           plantillaSeleccionada = plantillas.first;
           await _cargarConfigPlantilla(plantillas.first);
         }
+        // Fecha del inventario si la oficina la diligenció en el Excel
+        // (p. ej. calibraciones de otro mes); si no, la de hoy.
         final hoy = DateTime.now();
         fechaController.text =
-            '${hoy.year}-${hoy.month.toString().padLeft(2, '0')}-${hoy.day.toString().padLeft(2, '0')}';
+            TextUtils.fechaIso(widget.equipoInicial!['fecha']?.toString()) ??
+                '${hoy.year}-${hoy.month.toString().padLeft(2, '0')}-${hoy.day.toString().padLeft(2, '0')}';
         _fechaNotifier.value = fechaController.text;
         _seleccionarEquipo(widget.equipoInicial!);
       }

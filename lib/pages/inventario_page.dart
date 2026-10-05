@@ -255,7 +255,11 @@ class _InventarioPageState extends State<InventarioPage> {
         'ubicacion': row[_colUbicacion]?.value?.toString().trim() ?? '',
         'inventario': row[_colInventario]?.value?.toString().trim() ?? '',
         'certificado': row[_colCertificado]?.value?.toString().trim() ?? '',
-        'fecha': row[_colFecha]?.value?.toString().trim() ?? '',
+        // Normalizada a yyyy-MM-dd (la celda puede ser fecha de Excel,
+        // texto dd/mm/aaaa o serial); si no se reconoce se deja tal cual.
+        'fecha': TextUtils.fechaIso(row[_colFecha]?.value?.toString()) ??
+            row[_colFecha]?.value?.toString().trim() ??
+            '',
         'nuevo': false,
       });
     }
