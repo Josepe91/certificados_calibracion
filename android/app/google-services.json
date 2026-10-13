@@ -12,7 +12,20 @@
           "package_name": "co.btmc.certificados"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1025261964154-mfaa8oro62dprcaskooc7fjj6i9e3li7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "co.btmc.certificados",
+            "certificate_hash": "6fb5a10512121aa04ab429f2d8393c4d868a980b"
+          }
+        },
+        {
+          "client_id": "1025261964154-l803b5qmjn6626ivc5hq2smobimj0ef9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBhi2B7Z1BoLPkbzKU1QE7ODt8QKe73BzA"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1025261964154-l803b5qmjn6626ivc5hq2smobimj0ef9.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

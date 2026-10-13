@@ -2,6 +2,8 @@ import 'dart:typed_data';
 
 import 'package:excel/excel.dart';
 
+import 'montajes_sync.dart';
+
 /// Arma el Excel de inventario de un cliente a partir del JSON local
 /// (`{cliente: {...}, equipos: [...]}`, el mismo que escribe
 /// `InventarioData._guardar`).
@@ -34,7 +36,10 @@ class InventarioExcel {
     'Ciudad',
   ];
 
-  static Uint8List generar(Map<String, dynamic> data) {
+  /// [montajes]: los de MontajesSync para este cliente (por id de nube),
+  /// para separar en "Estado" los calibrados montados de los por montar.
+  static Uint8List generar(Map<String, dynamic> data,
+      {Map<String, Map<String, dynamic>> montajes = const {}}) {
     final cliente = (data['cliente'] as Map?) ?? const {};
     final equipos = ((data['equipos'] as List?) ?? const [])
         .whereType<Map>()
@@ -91,7 +96,7 @@ class InventarioExcel {
       celda(6, fila, txt(e['certificado']));
       celda(7, fila, txt(e['fecha']));
       celda(8, fila, txt(e['observaciones']));
-      celda(9, fila, _estado(e));
+      celda(9, fila, _estado(e, montajes));
     }
 
     const anchos = [28.0, 18, 18, 18, 22, 16, 16, 12, 36, 34, 30, 16, 14, 30, 16];
@@ -102,7 +107,7 @@ class InventarioExcel {
     return Uint8List.fromList(excel.encode()!);
   }
 
-  static String _estado(Map e) {
+  static String _estado(Map e, Map<String, Map<String, dynamic>> montajes) {
     String txt(Object? v) => v?.toString().trim() ?? '';
     if (e['fuera_de_servicio'] == true) {
       final por = txt(e['fuera_de_servicio_por']);
@@ -114,7 +119,12 @@ class InventarioExcel {
           ? 'NO PASA CALIBRACIÓN'
           : 'NO PASA CALIBRACIÓN: $detalle';
     }
-    if (txt(e['certificado']).isNotEmpty) return 'CALIBRADO';
+    if (txt(e['certificado']).isNotEmpty) {
+      return MontajesSync.estaMontado(
+              Map<String, dynamic>.from(e), montajes)
+          ? 'CALIBRADO · MONTADO'
+          : 'CALIBRADO · POR MONTAR';
+    }
     return 'PENDIENTE';
   }
 }

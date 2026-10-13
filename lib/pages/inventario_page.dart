@@ -6,6 +6,8 @@ import '../data/inventario_data.dart';
 import '../utils/mayusculas_formatter.dart';
 import 'nueva_solicitud_page.dart';
 import '../data/inventario_sync.dart';
+import '../data/auth_tecnico.dart';
+import '../data/montajes_sync.dart';
 import '../data/tecnico_profile.dart';
 import 'buscar_cliente_nube_page.dart';
 import '../utils/text_utils.dart';
@@ -27,6 +29,14 @@ const int _colClienteTelefono = 12;
 const int _colClienteDireccion = 13;
 const int _colClienteCiudad = 14;
 
+/// ISO8601 -> dd/mm/aaaa (vacío si no se reconoce).
+String fechaCorta(dynamic iso) {
+  final d = DateTime.tryParse(iso?.toString() ?? '')?.toLocal();
+  if (d == null) return '';
+  String dos(int n) => n.toString().padLeft(2, '0');
+  return '${dos(d.day)}/${dos(d.month)}/${d.year}';
+}
+
 class InventarioPage extends StatefulWidget {
   const InventarioPage({super.key});
 
@@ -39,6 +49,11 @@ class _InventarioPageState extends State<InventarioPage> {
   final ValueNotifier<String> _busquedaNotifier = ValueNotifier('');
   final ValueNotifier<String?> _ubicacionFiltroNotifier = ValueNotifier(null);
   final ValueNotifier<String?> _estadoFiltroNotifier = ValueNotifier(null);
+  // Sub-filtro de "Calibrados": null (todos) | 'por_montar' | 'montado'.
+  final ValueNotifier<String?> _montajeFiltroNotifier = ValueNotifier(null);
+  // Modo "marcar varios como montados" (solo admin): ids de nube elegidos,
+  // o null si el modo está apagado.
+  final ValueNotifier<Set<String>?> _seleccion = ValueNotifier(null);
 
   List<Map<String, dynamic>> _inventarios = [];
   bool _cargando = true;
@@ -61,6 +76,8 @@ class _InventarioPageState extends State<InventarioPage> {
     _busquedaNotifier.dispose();
     _ubicacionFiltroNotifier.dispose();
     _estadoFiltroNotifier.dispose();
+    _montajeFiltroNotifier.dispose();
+    _seleccion.dispose();
     InventarioData.versionNotifier.removeListener(_onVersionChange);
     super.dispose();
   }
@@ -363,17 +380,50 @@ class _InventarioPageState extends State<InventarioPage> {
     );
   }
 
+  void _alternarSeleccion(String claveNube) {
+    final actual = {...?_seleccion.value};
+    if (!actual.remove(claveNube)) actual.add(claveNube);
+    _seleccion.value = actual;
+  }
+
   Future<void> _editarEquipo(Map<String, dynamic> equipo, int index) async {
     final actualizado = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (_) => _CrearEditarEquipoDialog(equipo: equipo),
+      builder: (_) => _CrearEditarEquipoDialog(
+          equipo: equipo, montaje: MontajesSync.de(equipo)),
     );
     if (actualizado != null) {
       await InventarioData.actualizar(index, actualizado);
     }
   }
 
-  Widget _estadoBadge(bool calibrado) {
+  Widget _estadoBadge(bool calibrado, {bool? montado}) {
+    if (calibrado && montado != null) {
+      final color = montado ? Colors.teal : Colors.amber.shade800;
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withValues(alpha: 0.5), width: 0.8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (AuthTecnico.esAdmin) ...[
+              Icon(montado ? Icons.verified : Icons.verified_outlined,
+                  size: 11, color: color),
+              const SizedBox(width: 3),
+            ],
+            Text(
+              montado ? 'Montado' : 'Por montar',
+              style: TextStyle(
+                  fontSize: 10, fontWeight: FontWeight.w600, color: color),
+            ),
+          ],
+        ),
+      );
+    }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
@@ -392,6 +442,20 @@ class _InventarioPageState extends State<InventarioPage> {
           color: calibrado ? Colors.green.shade700 : Colors.orange.shade700,
         ),
       ),
+    );
+  }
+
+  // Para el admin la etiqueta "Por montar"/"Montado" es el botón para
+  // marcar/desmarcar (con su confirmación): no ocupa otro ícono en la
+  // tarjeta que le quite ancho al nombre del equipo.
+  Widget _badgeMontaje(Map<String, dynamic> e, bool calibrado, bool montado,
+      bool habilitado) {
+    final badge = _estadoBadge(calibrado, montado: montado);
+    if (!calibrado || !AuthTecnico.esAdmin || !habilitado) return badge;
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: () => montado ? _confirmarDesmontar(e) : _confirmarMontar([e]),
+      child: Padding(padding: const EdgeInsets.all(4), child: badge),
     );
   }
 
@@ -531,6 +595,188 @@ class _InventarioPageState extends State<InventarioPage> {
     );
   }
 
+  String get _clienteId => InventarioSync.slug(InventarioData.cliente);
+
+  Widget _datosEquipo(Map<String, dynamic> e) {
+    String t(String k) => e[k]?.toString().trim() ?? '';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(t('nombre'), style: const TextStyle(fontWeight: FontWeight.bold)),
+        if (t('marca').isNotEmpty || t('modelo').isNotEmpty)
+          Text('${t('marca')} · ${t('modelo')}'),
+        Text('Serie: ${t('serie')} · Inv: ${t('inventario')}'),
+        if (t('ubicacion').isNotEmpty) Text('Ubicación: ${t('ubicacion')}'),
+        const SizedBox(height: 6),
+        Text(
+          'Certificado N.º ${t('certificado')}'
+          '${t('fecha').isNotEmpty ? ' · ${t('fecha')}' : ''}',
+          style: TextStyle(
+              fontWeight: FontWeight.bold, color: Colors.green.shade800),
+        ),
+      ],
+    );
+  }
+
+  // Marcar montado SIEMPRE pasa por esta confirmación con los datos del
+  // equipo (o la lista, si son varios): evita marcar el equipo equivocado
+  // por un toque accidental.
+  Future<void> _confirmarMontar(List<Map<String, dynamic>> equipos) async {
+    if (equipos.isEmpty) return;
+    final uno = equipos.length == 1;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        icon: Icon(Icons.verified, color: Colors.teal.shade600, size: 36),
+        title: Text(uno
+            ? '¿Confirmas que el certificado ya está montado?'
+            : '¿Marcar ${equipos.length} equipos como montados?'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: uno
+              ? _datosEquipo(equipos.first)
+              : ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (final e in equipos)
+                      ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.verified_outlined, size: 18),
+                        title: Text(e['nombre']?.toString() ?? ''),
+                        subtitle: Text(
+                            'Cert ${e['certificado']} · Serie ${e['serie']}'),
+                      ),
+                  ],
+                ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(uno ? 'Sí, está montado' : 'Sí, marcar todos',
+                style: const TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await MontajesSync.marcar(_clienteId, equipos);
+      _seleccion.value = null;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(uno
+                ? 'Certificado marcado como montado'
+                : '${equipos.length} certificados marcados como montados')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('No se pudo marcar: $e')));
+      }
+    }
+  }
+
+  Future<void> _confirmarDesmontar(Map<String, dynamic> equipo) async {
+    final m = MontajesSync.de(equipo) ?? const {};
+    final motivo = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setLocal) => AlertDialog(
+          icon: Icon(Icons.remove_done, color: Colors.red.shade600, size: 36),
+          title: const Text('¿Quitar la marca de certificado montado?'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _datosEquipo(equipo),
+                if ((m['montado_por']?.toString() ?? '').isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text('Marcado por ${m['montado_por']} el '
+                      '${fechaCorta(m['montado_en'])}'),
+                ],
+                const SizedBox(height: 12),
+                TextField(
+                  controller: motivo,
+                  autofocus: true,
+                  maxLines: 2,
+                  onChanged: (_) => setLocal(() {}),
+                  decoration: const InputDecoration(
+                    labelText: 'Motivo (obligatorio)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Cancelar')),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: motivo.text.trim().isEmpty
+                  ? null
+                  : () => Navigator.pop(dialogContext, true),
+              child: const Text('Quitar marca',
+                  style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
+    final texto = motivo.text.trim();
+    if (ok != true) return;
+    try {
+      await MontajesSync.desmarcar(_clienteId, equipo, texto);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Marca de montado quitada')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('No se pudo quitar: $e')));
+      }
+    }
+  }
+
+  Future<void> _menuCuenta(String opcion) async {
+    if (opcion == 'varios') {
+      if (InventarioData.clienteActivo == null) return;
+      _estadoFiltroNotifier.value = 'calibrado';
+      _montajeFiltroNotifier.value = 'por_montar';
+      _seleccion.value = {};
+    } else if (opcion == 'salir') {
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Cerrar sesión'),
+          content: Text('¿Salir de la cuenta ${AuthTecnico.correo}?\n\n'
+              'Necesitarás internet para volver a entrar.'),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancelar')),
+            ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Cerrar sesión')),
+          ],
+        ),
+      );
+      if (ok != true) return;
+      await InventarioSync.detach();
+      await AuthTecnico.cerrarSesion();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -545,6 +791,35 @@ class _InventarioPageState extends State<InventarioPage> {
             icon: const Icon(Icons.upload_file),
             tooltip: 'Cargar inventario',
             onPressed: _mostrarOpcionesCargarInventario,
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.account_circle_outlined),
+            onSelected: _menuCuenta,
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                enabled: false,
+                child: Text(
+                    '${AuthTecnico.correo}${AuthTecnico.esAdmin ? ' (admin)' : ''}',
+                    style: const TextStyle(fontSize: 12)),
+              ),
+              if (AuthTecnico.esAdmin)
+                const PopupMenuItem(
+                  value: 'varios',
+                  child: ListTile(
+                    leading: Icon(Icons.library_add_check_outlined),
+                    title: Text('Marcar varios como montados'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              const PopupMenuItem(
+                value: 'salir',
+                child: ListTile(
+                  leading: Icon(Icons.logout),
+                  title: Text('Cerrar sesión'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -587,6 +862,9 @@ class _InventarioPageState extends State<InventarioPage> {
                       _busquedaNotifier,
                       _ubicacionFiltroNotifier,
                       _estadoFiltroNotifier,
+                      _montajeFiltroNotifier,
+                      _seleccion,
+                      MontajesSync.notifier,
                     ]),
                     builder: (_, __) {
                       final lista = InventarioData.equipos;
@@ -594,6 +872,9 @@ class _InventarioPageState extends State<InventarioPage> {
                           .toLowerCase();
                       final ubicFiltro = _ubicacionFiltroNotifier.value;
                       final estadoFiltro = _estadoFiltroNotifier.value;
+                      final montajeFiltro = _montajeFiltroNotifier.value;
+                      final montajes = MontajesSync.notifier.value;
+                      final seleccion = _seleccion.value;
 
                       final ubicaciones = lista
                           .map((e) => e['ubicacion']?.toString() ?? '')
@@ -621,7 +902,16 @@ class _InventarioPageState extends State<InventarioPage> {
                                 !esCal &&
                                 !esBaja) ||
                             (estadoFiltro == 'baja' && esBaja);
-                        return matchSearch && matchUbic && matchEstado;
+                        final montado =
+                            MontajesSync.estaMontado(e, montajes);
+                        final matchMontaje = estadoFiltro != 'calibrado' ||
+                            montajeFiltro == null ||
+                            (montajeFiltro == 'montado' && montado) ||
+                            (montajeFiltro == 'por_montar' && !montado);
+                        return matchSearch &&
+                            matchUbic &&
+                            matchEstado &&
+                            matchMontaje;
                       }).toList();
 
                       final calibrados = mostrar
@@ -690,8 +980,12 @@ class _InventarioPageState extends State<InventarioPage> {
                                 ),
                               ],
                               selected: {estadoFiltro},
-                              onSelectionChanged: (sel) =>
-                                  _estadoFiltroNotifier.value = sel.first,
+                              onSelectionChanged: (sel) {
+                                _estadoFiltroNotifier.value = sel.first;
+                                if (sel.first != 'calibrado') {
+                                  _montajeFiltroNotifier.value = null;
+                                }
+                              },
                               style: ButtonStyle(
                                 visualDensity: VisualDensity.compact,
                                 textStyle: WidgetStateProperty.all(
@@ -699,6 +993,55 @@ class _InventarioPageState extends State<InventarioPage> {
                               ),
                             ),
                           ),
+                          if (estadoFiltro == 'calibrado')
+                            Padding(
+                              padding:
+                                  const EdgeInsets.fromLTRB(12, 0, 12, 4),
+                              child: Row(
+                                children: [
+                                  for (final o in const [
+                                    [null, 'Todos'],
+                                    ['por_montar', 'Por montar'],
+                                    ['montado', 'Montados'],
+                                  ])
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 6),
+                                      child: ChoiceChip(
+                                        label: Text(o[1]!,
+                                            style:
+                                                const TextStyle(fontSize: 11)),
+                                        visualDensity: VisualDensity.compact,
+                                        selected: montajeFiltro == o[0],
+                                        onSelected: (_) =>
+                                            _montajeFiltroNotifier.value = o[0],
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          if (seleccion != null)
+                            Container(
+                              width: double.infinity,
+                              color: Colors.teal.shade50,
+                              padding: const EdgeInsets.fromLTRB(16, 4, 4, 4),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      'Toca los equipos a marcar como montados '
+                                      '(${seleccion.length} elegidos)',
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.teal.shade800),
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => _seleccion.value = null,
+                                    child: const Text('Cancelar'),
+                                  ),
+                                ],
+                              ),
+                            ),
                           if (mostrar.isNotEmpty)
                             Container(
                               width: double.infinity,
@@ -783,6 +1126,15 @@ class _InventarioPageState extends State<InventarioPage> {
                                   final tieneInv =
                                       e['inventario']?.toString().isNotEmpty ??
                                           false;
+                                  final montaje = montajes[
+                                      InventarioSync.docId(e)];
+                                  final esMontado =
+                                      MontajesSync.estaMontado(e, montajes);
+                                  final claveNube = InventarioSync.docId(e);
+                                  final seleccionable = seleccion != null &&
+                                      esCalibrado &&
+                                      !esMontado &&
+                                      !esBaja;
 
                                   // Buscar el índice real en la lista completa
                                   // por id (identidad estable, no rompe con
@@ -806,7 +1158,16 @@ class _InventarioPageState extends State<InventarioPage> {
                                     margin: const EdgeInsets.symmetric(
                                         horizontal: 12, vertical: 4),
                                     child: ListTile(
-                                      leading: CircleAvatar(
+                                      leading: seleccion != null
+                                          ? Checkbox(
+                                              value: seleccion
+                                                  .contains(claveNube),
+                                              onChanged: seleccionable
+                                                  ? (_) => _alternarSeleccion(
+                                                      claveNube)
+                                                  : null,
+                                            )
+                                          : CircleAvatar(
                                         backgroundColor: avatarColor,
                                         child: Icon(
                                           esBaja
@@ -839,7 +1200,8 @@ class _InventarioPageState extends State<InventarioPage> {
                                           else if (noPasaCalibracion)
                                             _badgeNoPasaCalibracion()
                                           else
-                                            _estadoBadge(esCalibrado),
+                                            _badgeMontaje(e, esCalibrado,
+                                                esMontado, seleccion == null),
                                         ],
                                       ),
                                       subtitle: Column(
@@ -887,6 +1249,14 @@ class _InventarioPageState extends State<InventarioPage> {
                                               style: TextStyle(
                                                   fontSize: 11,
                                                   color: Colors.green.shade700),
+                                            ),
+                                          if (esMontado)
+                                            Text(
+                                              'Montado por ${montaje?['montado_por'] ?? ''}'
+                                              '${fechaCorta(montaje?['montado_en']).isNotEmpty ? ' · ${fechaCorta(montaje?['montado_en'])}' : ''}',
+                                              style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: Colors.teal.shade700),
                                             ),
                                           if ((e['observaciones']
                                                   ?.toString()
@@ -941,7 +1311,8 @@ class _InventarioPageState extends State<InventarioPage> {
                                         ],
                                       ),
                                       isThreeLine: true,
-                                      trailing: index != -1
+                                      trailing: index != -1 &&
+                                              seleccion == null
                                           ? Row(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
@@ -968,9 +1339,14 @@ class _InventarioPageState extends State<InventarioPage> {
                                               ],
                                             )
                                           : null,
-                                      onTap: index != -1
-                                          ? () => _editarEquipo(e, index)
-                                          : null,
+                                      onTap: seleccion != null
+                                          ? (seleccionable
+                                              ? () =>
+                                                  _alternarSeleccion(claveNube)
+                                              : null)
+                                          : index != -1
+                                              ? () => _editarEquipo(e, index)
+                                              : null,
                                     ),
                                   );
                                 },
@@ -983,9 +1359,26 @@ class _InventarioPageState extends State<InventarioPage> {
                 ),
               ],
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _crearEquipo,
-        child: const Icon(Icons.add),
+      floatingActionButton: ValueListenableBuilder<Set<String>?>(
+        valueListenable: _seleccion,
+        builder: (_, sel, __) => sel == null
+            ? FloatingActionButton(
+                onPressed: _crearEquipo,
+                child: const Icon(Icons.add),
+              )
+            : FloatingActionButton.extended(
+                backgroundColor:
+                    sel.isEmpty ? Colors.grey : Colors.teal.shade600,
+                foregroundColor: Colors.white,
+                onPressed: sel.isEmpty
+                    ? null
+                    : () => _confirmarMontar(InventarioData.equipos
+                        .where(
+                            (e) => sel.contains(InventarioSync.docId(e)))
+                        .toList()),
+                icon: const Icon(Icons.verified),
+                label: Text('Marcar ${sel.length} montados'),
+              ),
       ),
     );
   }
@@ -1058,7 +1451,9 @@ class _SyncBadge extends StatelessWidget {
 
 class _CrearEditarEquipoDialog extends StatefulWidget {
   final Map<String, dynamic>? equipo;
-  const _CrearEditarEquipoDialog({this.equipo});
+  // Solo lectura: la marca de montado se cambia desde la lista (admin).
+  final Map<String, dynamic>? montaje;
+  const _CrearEditarEquipoDialog({this.equipo, this.montaje});
 
   @override
   State<_CrearEditarEquipoDialog> createState() =>
@@ -1100,6 +1495,14 @@ class _CrearEditarEquipoDialogState extends State<_CrearEditarEquipoDialog> {
       if (mounted) setState(() => _tecnicoActual = n);
     });
   }
+
+  // Más reciente primero.
+  List<Map> get _historialMontaje =>
+      ((widget.montaje?['historial'] as List?) ?? const [])
+          .whereType<Map>()
+          .toList()
+          .reversed
+          .toList();
 
   @override
   void dispose() {
@@ -1158,6 +1561,40 @@ class _CrearEditarEquipoDialogState extends State<_CrearEditarEquipoDialog> {
                 ),
               ),
             ),
+          if (_historialMontaje.isNotEmpty) ...[
+            const Divider(),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text('Historial de certificado montado',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      color: Colors.teal.shade800)),
+            ),
+            for (final h in _historialMontaje)
+              ListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  h['accion'] == 'montado'
+                      ? Icons.verified
+                      : Icons.remove_done,
+                  size: 18,
+                  color: h['accion'] == 'montado'
+                      ? Colors.teal
+                      : Colors.red.shade400,
+                ),
+                title: Text(
+                  '${h['accion'] == 'montado' ? 'Montado' : 'Desmontado'}'
+                  ' · ${fechaCorta(h['en'])} · ${h['por'] ?? ''}',
+                  style: const TextStyle(fontSize: 12),
+                ),
+                subtitle: (h['motivo']?.toString() ?? '').isNotEmpty
+                    ? Text('Motivo: ${h['motivo']}',
+                        style: const TextStyle(fontSize: 11))
+                    : null,
+              ),
+          ],
         ]),
       ),
       actions: [

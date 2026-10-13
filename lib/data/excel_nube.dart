@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 
 import 'inventario_sync.dart';
 import 'tecnico_profile.dart';
+import 'auth_tecnico.dart';
 
 /// Sube los Excel (certificados e inventarios) a Firebase Storage, para
 /// que la oficina los descargue sin que el técnico tenga que compartirlos
@@ -28,11 +28,7 @@ class ExcelNube {
 
   static FirebaseStorage get _storage => FirebaseStorage.instance;
 
-  static Future<void> _asegurarSesion() async {
-    if (FirebaseAuth.instance.currentUser == null) {
-      await FirebaseAuth.instance.signInAnonymously();
-    }
-  }
+  static Future<void> _asegurarSesion() => AuthTecnico.asegurarSesion();
 
   /// Sube el certificado de una solicitud ya guardada. Retorna true si
   /// quedó en la nube. Nunca lanza: sin señal simplemente retorna false y

@@ -4,7 +4,6 @@ import 'dart:io';
 
 import 'package:archive/archive_io.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
@@ -16,6 +15,7 @@ import 'excel_nube.dart';
 import 'inventario_sync.dart';
 import 'solicitudes_storage.dart';
 import 'tecnico_profile.dart';
+import 'auth_tecnico.dart';
 
 /// Sube/descarga solicitudes (certificado + mediciones + fotos) contra
 /// Firestore + Cloud Storage, para que cualquier técnico vea y edite una
@@ -34,11 +34,7 @@ class SolicitudesSync {
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
   static final FirebaseStorage _storage = FirebaseStorage.instance;
 
-  static Future<void> _asegurarSesion() async {
-    if (FirebaseAuth.instance.currentUser == null) {
-      await FirebaseAuth.instance.signInAnonymously();
-    }
-  }
+  static Future<void> _asegurarSesion() => AuthTecnico.asegurarSesion();
 
   static CollectionReference<Map<String, dynamic>> _solicitudesRef(
       String clienteId) {

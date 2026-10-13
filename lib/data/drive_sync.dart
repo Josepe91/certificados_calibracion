@@ -10,6 +10,8 @@ import 'certificado_excel.dart';
 import 'inventario_excel.dart';
 import 'solicitudes_storage.dart';
 import '../utils/text_utils.dart';
+import 'inventario_sync.dart';
+import 'montajes_sync.dart';
 
 class DriveSync {
   // ===============================
@@ -109,7 +111,10 @@ class DriveSync {
 
         final nombreArchivo = 'INVENTARIO_$nombreCliente.xlsx';
         final tempFile = File(p.join(carpetaTemp.path, nombreArchivo));
-        await tempFile.writeAsBytes(InventarioExcel.generar(data));
+        final montajes = await MontajesSync.cargar(InventarioSync.slug(
+            data['cliente']?['nombre']?.toString() ?? ''));
+        await tempFile
+            .writeAsBytes(InventarioExcel.generar(data, montajes: montajes));
 
         nombresGuardados.add(nombreArchivo);
         xfiles.add(XFile(tempFile.path));

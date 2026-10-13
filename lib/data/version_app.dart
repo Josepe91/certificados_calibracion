@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'auth_tecnico.dart';
 
 /// Control de versión entre celulares de los técnicos.
 ///
@@ -49,9 +49,7 @@ class VersionApp {
   static Future<int?> verificar() async {
     try {
       final actual = await build();
-      if (FirebaseAuth.instance.currentUser == null) {
-        await FirebaseAuth.instance.signInAnonymously();
-      }
+      await AuthTecnico.asegurarSesion();
       final snap = await _doc.get().timeout(const Duration(seconds: 8));
       final minima = (snap.data()?['version_minima'] as num?)?.toInt() ?? 0;
 

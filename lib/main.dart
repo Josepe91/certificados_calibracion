@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'firebase_options.dart';
+import 'data/auth_tecnico.dart';
 import 'data/plantillas_initializer.dart';
 import 'theme/app_theme.dart';
+import 'pages/login_page.dart';
 import 'pages/main_navigation_page.dart';
 
 void main() async {
@@ -46,7 +49,30 @@ class BTMCApp extends StatelessWidget {
         Locale('en', 'US'),
       ],
       locale: const Locale('es', 'CO'),
-      home: const MainNavigationPage(),
+      home: const _AuthGate(),
+    );
+  }
+}
+
+/// Sin una sesión de Google de un técnico autorizado no se entra a la app
+/// (ver AuthTecnico). La sesión queda guardada en el celular, así que en
+/// campo sin señal se abre directo.
+class _AuthGate extends StatelessWidget {
+  const _AuthGate();
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (_, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+              body: Center(child: CircularProgressIndicator()));
+        }
+        return AuthTecnico.autorizado
+            ? const MainNavigationPage()
+            : const LoginPage();
+      },
     );
   }
 }

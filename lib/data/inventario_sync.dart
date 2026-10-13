@@ -1,11 +1,12 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
 import 'tecnico_profile.dart';
 import '../utils/text_utils.dart';
+import 'auth_tecnico.dart';
+import 'montajes_sync.dart';
 
 /// Sincroniza el inventario de un cliente contra Firestore para que varios
 /// técnicos que trabajan el mismo cliente (con o sin señal) terminen el día
@@ -118,11 +119,7 @@ class InventarioSync {
     return clave.isNotEmpty ? clave : claveEquipo(equipo);
   }
 
-  static Future<void> _asegurarSesion() async {
-    if (FirebaseAuth.instance.currentUser == null) {
-      await FirebaseAuth.instance.signInAnonymously();
-    }
-  }
+  static Future<void> _asegurarSesion() => AuthTecnico.asegurarSesion();
 
   static CollectionReference<Map<String, dynamic>> _equiposRef(
       String clienteId) {
@@ -134,6 +131,7 @@ class InventarioSync {
     await detach();
     _clienteIdActivo = clienteId;
     _yaAplicado = false;
+    await MontajesSync.attach(clienteId);
 
     estadoNotifier.value = 'sincronizando';
     // El orden se resuelve en InventarioData con el campo 'orden' de cada
@@ -318,10 +316,63 @@ class InventarioSync {
     }
   }
 
+  /// Busca en la nube (inventarios y solicitudes de TODOS los clientes y
+  /// técnicos) dónde más se usó este número de certificado, comparando
+  /// exacto ("0123" y "123" son distintos). Excluye el propio equipo
+  /// ([clienteId]/[equipoClave]). Retorna null si no se pudo consultar
+  /// (sin señal): el que llama avisa que no se verificó con los demás.
+  ///
+  /// Requiere los índices de collection group de firestore.indexes.json.
+  static Future<List<Map<String, String>>?> buscarCertificadoEnNube(
+    String certificado, {
+    required String clienteId,
+    required String equipoClave,
+  }) async {
+    if (certificado.isEmpty) return const [];
+    try {
+      await _asegurarSesion();
+      const servidor = GetOptions(source: Source.server);
+      final consultas = await Future.wait([
+        _db
+            .collectionGroup('equipos')
+            .where('certificado', isEqualTo: certificado)
+            .get(servidor),
+        _db
+            .collectionGroup('solicitudes')
+            .where('certificado', isEqualTo: certificado)
+            .get(servidor),
+      ]).timeout(const Duration(seconds: 10));
+
+      final vistos = <String>{};
+      final resultado = <Map<String, String>>[];
+      for (final snap in consultas) {
+        for (final d in snap.docs) {
+          final cliente = d.reference.parent.parent?.id ?? '';
+          if (cliente == clienteId && d.id == equipoClave) continue;
+          // El mismo equipo aparece en equipos/ y en solicitudes/.
+          if (!vistos.add('$cliente/${d.id}')) continue;
+          final data = d.data();
+          final equipo = (data['equipo'] as Map?) ?? data;
+          final nombreCliente = (data['cliente'] as Map?)?['nombre'];
+          resultado.add({
+            'equipo': equipo['nombre']?.toString() ?? 'un equipo',
+            'cliente': nombreCliente?.toString() ?? cliente.replaceAll('_', ' '),
+            'por': data['actualizado_por']?.toString() ?? '',
+          });
+        }
+      }
+      return resultado;
+    } catch (e) {
+      debugPrint('InventarioSync.buscarCertificadoEnNube: $e');
+      return null;
+    }
+  }
+
   static Future<void> detach() async {
     await _sub?.cancel();
     _sub = null;
     _clienteIdActivo = null;
+    await MontajesSync.detach();
     estadoNotifier.value = 'apagado';
   }
 

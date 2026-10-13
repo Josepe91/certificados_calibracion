@@ -13,6 +13,7 @@ import '../data/certificado_excel.dart';
 import '../data/solicitudes_storage.dart';
 import '../data/solicitudes_sync.dart';
 import '../data/inventario_data.dart';
+import '../data/inventario_sync.dart';
 import '../data/plantillas_initializer.dart';
 import '../data/emp_referencia.dart';
 import '../data/tecnico_profile.dart';
@@ -687,18 +688,46 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
       return false;
     }
 
-    // Alerta si el número de certificado ya se usó en otra solicitud.
-    final equipoDuplicado = await _buscarCertificadoDuplicado(
-      certificadoController.text.trim(),
+    // Alerta si el número de certificado ya se usó: en este celular
+    // (solicitudes locales) y en la nube (inventarios y solicitudes de
+    // TODOS los técnicos). Es solo un aviso — el número viene del sticker
+    // físico y se respeta tal cual (memoria btmc-certificado-manual).
+    final cert = certificadoController.text.trim();
+    final equipoDuplicado = await _buscarCertificadoDuplicado(cert);
+    final enNube = await InventarioSync.buscarCertificadoEnNube(
+      cert,
+      clienteId: InventarioSync.slug(InventarioData.cliente),
+      equipoClave: InventarioSync.docId(equipoSeleccionado!),
     );
-    if (equipoDuplicado != null && mounted) {
+    final usos = <String>[
+      ...?enNube?.map((u) =>
+          '• ${u['equipo']} — ${u['cliente']}'
+          '${(u['por'] ?? '').isNotEmpty ? ' (${u['por']})' : ''}'),
+    ];
+    if (equipoDuplicado != null && usos.isEmpty) {
+      usos.add('• $equipoDuplicado (en este celular)');
+    }
+    if ((usos.isNotEmpty || enNube == null) && mounted) {
       final continuar = await showDialog<bool>(
         context: context,
         builder: (_) => AlertDialog(
-          title: const Text('Número de certificado repetido'),
-          content: Text(
-            'El número "${certificadoController.text.trim()}" ya se usó '
-            'en "$equipoDuplicado".\n\n¿Deseas continuar de todas formas?',
+          icon: Icon(
+            usos.isNotEmpty ? Icons.warning_amber : Icons.cloud_off_outlined,
+            color: Colors.orange.shade700,
+            size: 36,
+          ),
+          title: Text(usos.isNotEmpty
+              ? 'Número de certificado repetido'
+              : 'No se pudo verificar el número'),
+          content: SingleChildScrollView(
+            child: Text(usos.isNotEmpty
+                ? 'El certificado "$cert" ya se usó en:\n\n'
+                    '${usos.join('\n')}'
+                    '${enNube == null ? '\n\n(Sin internet: no se pudo revisar lo de los demás técnicos.)' : ''}'
+                    '\n\n¿Deseas continuar de todas formas?'
+                : 'Sin internet no se pudo revisar si otro técnico ya usó '
+                    'el certificado "$cert". En este celular no está '
+                    'repetido.\n\n¿Deseas continuar?'),
           ),
           actions: [
             TextButton(
