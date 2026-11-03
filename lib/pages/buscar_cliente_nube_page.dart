@@ -78,7 +78,7 @@ class _BuscarClienteNubePageState extends State<BuscarClienteNubePage> {
       if (mounted) {
         setState(() => _descargando = null);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('No se pudo cargar el cliente: $e')),
+          SnackBar(content: Text('No se pudo cargar el cliente: $e'), duration: const Duration(seconds: 2), persist: false,),
         );
       }
     }

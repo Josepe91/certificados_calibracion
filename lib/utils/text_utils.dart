@@ -70,4 +70,46 @@ class TextUtils {
         .replaceAll(RegExp(r'\s+'), '_')
         .replaceAll(RegExp(r'[^a-zA-Z0-9_\-]'), '');
   }
+
+  /// Quita espacios al inicio/final y deja un solo espacio entre palabras.
+  static String limpiarEspacios(String texto) =>
+      texto.trim().replaceAll(RegExp(r'\s+'), ' ');
+
+  /// Clave para saber si dos ubicaciones son la MISMA aunque estén escritas
+  /// distinto ("UCI ADULTO " / "uci  adulto" / "UCI EXPANSION" vs
+  /// "UCI EXPANSIÓN"). Sin esto, el filtro de Inventario mostraba una
+  /// pestaña por cada variante y un equipo nuevo creaba otra ubicación.
+  static String claveUbicacion(dynamic ubicacion) =>
+      quitarTildes(limpiarEspacios(ubicacion?.toString() ?? '').toUpperCase());
+
+  /// Agrupa ubicaciones equivalentes (ver [claveUbicacion]):
+  /// clave → (nombre a mostrar, cantidad de equipos). El nombre a mostrar
+  /// es la escritura más usada; a igual uso, la que tiene tildes.
+  static Map<String, ({String nombre, int cantidad})> agruparUbicaciones(
+      Iterable<dynamic> ubicaciones) {
+    final usos = <String, Map<String, int>>{};
+    for (final u in ubicaciones) {
+      final texto = limpiarEspacios(u?.toString() ?? '');
+      if (texto.isEmpty) continue;
+      final variantes = usos.putIfAbsent(claveUbicacion(texto), () => {});
+      variantes[texto] = (variantes[texto] ?? 0) + 1;
+    }
+    final resultado = <String, ({String nombre, int cantidad})>{};
+    usos.forEach((clave, variantes) {
+      final orden = variantes.entries.toList()
+        ..sort((a, b) {
+          final c = b.value.compareTo(a.value);
+          if (c != 0) return c;
+          final aTilde = quitarTildes(a.key) != a.key;
+          final bTilde = quitarTildes(b.key) != b.key;
+          if (aTilde != bTilde) return aTilde ? -1 : 1;
+          return a.key.compareTo(b.key);
+        });
+      resultado[clave] = (
+        nombre: orden.first.key,
+        cantidad: variantes.values.fold(0, (a, b) => a + b),
+      );
+    });
+    return resultado;
+  }
 }

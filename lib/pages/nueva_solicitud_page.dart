@@ -654,7 +654,8 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
           ],
         ),
         backgroundColor: Colors.red.shade700,
-        duration: const Duration(seconds: 3),
+        duration: const Duration(seconds: 2),
+        persist: false,
       ),
     );
   }
@@ -1028,7 +1029,8 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
                 ],
               ),
               backgroundColor: Colors.orange.shade700,
-              duration: const Duration(seconds: 5),
+              duration: const Duration(seconds: 2),
+              persist: false,
             ),
           );
         } else {
@@ -1047,7 +1049,6 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
                 ],
               ),
               backgroundColor: Colors.green.shade700,
-              duration: const Duration(seconds: 6),
               action: xlsx == null
                   ? null
                   : SnackBarAction(
@@ -1055,6 +1056,8 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
                       textColor: Colors.white,
                       onPressed: () => Share.shareXFiles([XFile(xlsx.path)]),
                     ),
+              duration: const Duration(seconds: 2),
+              persist: false,
             ),
           );
         }

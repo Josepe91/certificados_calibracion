@@ -57,7 +57,7 @@ class _HomePageState extends State<HomePage> {
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Solicitudes eliminadas')),
+        const SnackBar(content: Text('Solicitudes eliminadas'), duration: const Duration(seconds: 2), persist: false,),
       );
     }
   }
@@ -96,7 +96,7 @@ class _HomePageState extends State<HomePage> {
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Inventarios eliminados')),
+        const SnackBar(content: Text('Inventarios eliminados'), duration: const Duration(seconds: 2), persist: false,),
       );
     }
   }
@@ -130,18 +130,65 @@ class _HomePageState extends State<HomePage> {
     if (dias == null || !context.mounted) return;
 
     final hoy = DateTime.now();
-    final haySolicitudes = await DriveSync.syncSolicitudes(
-      enviadasDesde: dias == 0
-          ? null
-          : DateTime(hoy.year, hoy.month, hoy.day - (dias - 1)),
+    // Mientras se preparan los certificados se muestra el avance; antes la
+    // pantalla quedaba quieta hasta que abría la ventana de compartir.
+    final progreso = ValueNotifier<String>('Preparando certificados...');
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          content: Row(
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(width: 20),
+              Expanded(
+                child: ValueListenableBuilder<String>(
+                  valueListenable: progreso,
+                  builder: (_, t, __) => Text(t),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
+    var dialogoAbierto = true;
+    void cerrarDialogo() {
+      if (dialogoAbierto && context.mounted) {
+        dialogoAbierto = false;
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+    }
+
+    bool haySolicitudes;
+    try {
+      haySolicitudes = await DriveSync.syncSolicitudes(
+        enviadasDesde: dias == 0
+            ? null
+            : DateTime(hoy.year, hoy.month, hoy.day - (dias - 1)),
+        onProgreso: (hechos, total) {
+          progreso.value = 'Preparando certificados... $hechos de $total';
+          // Listo todo: se cierra antes de que aparezca la ventana de
+          // compartir, para que no quede encima.
+          if (hechos == total) cerrarDialogo();
+        },
+      );
+    } finally {
+      // Sin dispose: el diálogo puede seguir animando su salida con este
+      // notifier escuchado; es un objeto chico y se libera solo.
+      cerrarDialogo();
+    }
 
     if (!context.mounted) return;
 
     if (!haySolicitudes) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('No hay solicitudes para compartir')),
+            content: Text('No hay solicitudes para compartir'),
+            duration: const Duration(seconds: 2),
+            persist: false,),
       );
       return;
     }
@@ -177,7 +224,8 @@ class _HomePageState extends State<HomePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('$cantidad solicitud(es) marcada(s) como enviada(s) ✓'),
-          duration: const Duration(seconds: 3),
+          duration: const Duration(seconds: 2),
+          persist: false,
         ),
       );
     }
@@ -195,7 +243,8 @@ class _HomePageState extends State<HomePage> {
             : '$quedan sin subir (revisa la señal e intenta de nuevo)'),
         backgroundColor:
             quedan == 0 ? Colors.green.shade700 : Colors.orange.shade700,
-        duration: const Duration(seconds: 5),
+        duration: const Duration(seconds: 2),
+        persist: false,
       ),
     );
   }
@@ -234,7 +283,7 @@ class _HomePageState extends State<HomePage> {
     if (context.mounted) {
       if (nombres.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No hay inventarios para exportar')),
+          const SnackBar(content: Text('No hay inventarios para exportar'), duration: const Duration(seconds: 2), persist: false,),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -242,7 +291,8 @@ class _HomePageState extends State<HomePage> {
             content: Text(
               'Compartiendo ${nombres.length} inventario(s)...',
             ),
-            duration: const Duration(seconds: 4),
+            duration: const Duration(seconds: 2),
+            persist: false,
           ),
         );
       }

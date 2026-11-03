@@ -102,7 +102,7 @@ class _InventarioPageState extends State<InventarioPage> {
     _estadoFiltroNotifier.value = null;
     setState(() {});
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Inventario de $nombreCliente activado')),
+      SnackBar(content: Text('Inventario de $nombreCliente activado'), duration: const Duration(seconds: 2), persist: false,),
     );
   }
 
@@ -254,7 +254,9 @@ class _InventarioPageState extends State<InventarioPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('No se encontró nombre de cliente en el Excel')),
+              content: Text('No se encontró nombre de cliente en el Excel'),
+              duration: const Duration(seconds: 2),
+              persist: false,),
         );
       }
       return;
@@ -303,7 +305,8 @@ class _InventarioPageState extends State<InventarioPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(mensaje),
-          duration: const Duration(seconds: 4),
+          duration: const Duration(seconds: 2),
+          persist: false,
         ),
       );
     }
@@ -334,7 +337,9 @@ class _InventarioPageState extends State<InventarioPage> {
     if (InventarioData.clienteActivo == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Primero selecciona o carga un inventario')),
+            content: Text('Primero selecciona o carga un inventario'),
+            duration: const Duration(seconds: 2),
+            persist: false,),
       );
       return;
     }
@@ -672,12 +677,14 @@ class _InventarioPageState extends State<InventarioPage> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(uno
                 ? 'Certificado marcado como montado'
-                : '${equipos.length} certificados marcados como montados')));
+                : '${equipos.length} certificados marcados como montados'),
+            duration: const Duration(seconds: 2),
+            persist: false,));
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('No se pudo marcar: $e')));
+            .showSnackBar(SnackBar(content: Text('No se pudo marcar: $e'), duration: const Duration(seconds: 2), persist: false,));
       }
     }
   }
@@ -738,12 +745,12 @@ class _InventarioPageState extends State<InventarioPage> {
       await MontajesSync.desmarcar(_clienteId, equipo, texto);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Marca de montado quitada')));
+            const SnackBar(content: Text('Marca de montado quitada'), duration: const Duration(seconds: 2), persist: false,));
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('No se pudo quitar: $e')));
+            .showSnackBar(SnackBar(content: Text('No se pudo quitar: $e'), duration: const Duration(seconds: 2), persist: false,));
       }
     }
   }
@@ -876,12 +883,17 @@ class _InventarioPageState extends State<InventarioPage> {
                       final montajes = MontajesSync.notifier.value;
                       final seleccion = _seleccion.value;
 
-                      final ubicaciones = lista
-                          .map((e) => e['ubicacion']?.toString() ?? '')
-                          .where((u) => u.isNotEmpty)
-                          .toSet()
-                          .toList()
-                        ..sort();
+                      // Ubicaciones equivalentes (espacios, tildes) se
+                      // agrupan en una sola; el filtro guarda la CLAVE.
+                      final grupos = TextUtils.agruparUbicaciones(
+                          lista.map((e) => e['ubicacion']));
+                      final ubicaciones = grupos.keys.toList()
+                        ..sort((a, b) => grupos[a]!
+                            .nombre
+                            .compareTo(grupos[b]!.nombre));
+                      final ubicFiltroNombre = ubicFiltro == null
+                          ? null
+                          : (grupos[ubicFiltro]?.nombre ?? ubicFiltro);
 
                       String norm(dynamic v) =>
                           TextUtils.quitarTildes(v.toString()).toLowerCase();
@@ -891,7 +903,8 @@ class _InventarioPageState extends State<InventarioPage> {
                             norm(e['inventario']).contains(q) ||
                             norm(e['nombre']).contains(q);
                         final matchUbic = ubicFiltro == null ||
-                            e['ubicacion'].toString() == ubicFiltro;
+                            TextUtils.claveUbicacion(e['ubicacion']) ==
+                                ubicFiltro;
                         final esCal =
                             (e['certificado']?.toString().trim() ?? '')
                                 .isNotEmpty;
@@ -927,30 +940,39 @@ class _InventarioPageState extends State<InventarioPage> {
                       return Column(
                         children: [
                           if (ubicaciones.isNotEmpty)
-                            SizedBox(
-                              height: 48,
-                              child: ListView(
-                                scrollDirection: Axis.horizontal,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 6),
-                                children: [
-                                  FilterChip(
-                                    label: const Text('Todas'),
-                                    selected: ubicFiltro == null,
-                                    onSelected: (_) =>
-                                        _ubicacionFiltroNotifier.value = null,
-                                  ),
-                                  ...ubicaciones.map((u) => Padding(
-                                        padding: const EdgeInsets.only(left: 6),
-                                        child: FilterChip(
-                                          label: Text(u),
-                                          selected: ubicFiltro == u,
-                                          onSelected: (_) =>
-                                              _ubicacionFiltroNotifier.value =
-                                                  ubicFiltro == u ? null : u,
-                                        ),
-                                      )),
-                                ],
+                            Padding(
+                              padding:
+                                  const EdgeInsets.fromLTRB(12, 6, 12, 6),
+                              // Lista desplegable con buscador: con muchas
+                              // ubicaciones la fila de chips era incómoda.
+                              // La key la recrea al cambiar el filtro para
+                              // que el texto mostrado siempre coincida.
+                              child: LayoutBuilder(
+                                builder: (_, c) => DropdownMenu<String>(
+                                  key: ValueKey(ubicFiltro),
+                                  width: c.maxWidth,
+                                  menuHeight: 320,
+                                  enableFilter: true,
+                                  requestFocusOnTap: true,
+                                  leadingIcon: const Icon(Icons.location_on),
+                                  label: const Text('Ubicación'),
+                                  initialSelection: ubicFiltro ?? '',
+                                  onSelected: (v) =>
+                                      _ubicacionFiltroNotifier.value =
+                                          (v == null || v.isEmpty) ? null : v,
+                                  dropdownMenuEntries: [
+                                    DropdownMenuEntry(
+                                        value: '',
+                                        label:
+                                            'Todas (${lista.length})'),
+                                    for (final u in ubicaciones)
+                                      DropdownMenuEntry(
+                                        value: u,
+                                        label:
+                                            '${grupos[u]!.nombre} (${grupos[u]!.cantidad})',
+                                      ),
+                                  ],
+                                ),
                               ),
                             ),
                           Padding(
@@ -1056,7 +1078,7 @@ class _InventarioPageState extends State<InventarioPage> {
                                     const SizedBox(width: 4),
                                     Expanded(
                                       child: Text(
-                                        ubicFiltro,
+                                        ubicFiltroNombre!,
                                         style: TextStyle(
                                             fontWeight: FontWeight.w600,
                                             fontSize: 12,
@@ -1468,6 +1490,13 @@ class _CrearEditarEquipoDialogState extends State<_CrearEditarEquipoDialog> {
       ubicacion,
       inventario,
       observaciones;
+  final FocusNode _ubicacionFocus = FocusNode();
+  // Ubicaciones que ya existen en el inventario, agrupadas por equivalencia
+  // (ver TextUtils.claveUbicacion) — para sugerirlas al escribir y para
+  // guardar con la misma escritura en vez de crear una ubicación "nueva".
+  late final Map<String, ({String nombre, int cantidad})> _ubicaciones =
+      TextUtils.agruparUbicaciones(
+          InventarioData.equipos.map((e) => e['ubicacion']));
   bool _fueraDeServicio = false;
   late final bool _fueraDeServicioInicial;
   String? _fueraDeServicioPor;
@@ -1511,6 +1540,7 @@ class _CrearEditarEquipoDialogState extends State<_CrearEditarEquipoDialog> {
     modelo.dispose();
     serie.dispose();
     ubicacion.dispose();
+    _ubicacionFocus.dispose();
     inventario.dispose();
     observaciones.dispose();
     super.dispose();
@@ -1526,7 +1556,7 @@ class _CrearEditarEquipoDialogState extends State<_CrearEditarEquipoDialog> {
           _buildField(marca, 'Marca'),
           _buildField(modelo, 'Modelo'),
           _buildField(serie, 'Serie'),
-          _buildField(ubicacion, 'Ubicación / Servicio'),
+          _buildUbicacionField(),
           _buildField(inventario, 'Inventario'),
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
@@ -1605,7 +1635,7 @@ class _CrearEditarEquipoDialogState extends State<_CrearEditarEquipoDialog> {
           onPressed: () {
             if (nombre.text.trim().isEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('El nombre es obligatorio')),
+                const SnackBar(content: Text('El nombre es obligatorio'), duration: const Duration(seconds: 2), persist: false,),
               );
               return;
             }
@@ -1613,7 +1643,9 @@ class _CrearEditarEquipoDialogState extends State<_CrearEditarEquipoDialog> {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                     content: Text(
-                        'Escribe en Observaciones por qué está fuera de servicio')),
+                        'Escribe en Observaciones por qué está fuera de servicio'),
+                    duration: const Duration(seconds: 2),
+                    persist: false,),
               );
               return;
             }
@@ -1639,7 +1671,7 @@ class _CrearEditarEquipoDialogState extends State<_CrearEditarEquipoDialog> {
               'marca': marca.text,
               'modelo': modelo.text,
               'serie': serie.text,
-              'ubicacion': ubicacion.text,
+              'ubicacion': _ubicacionFinal(),
               'inventario': inventario.text,
               'certificado': widget.equipo?['certificado'] ?? '',
               'fecha': widget.equipo?['fecha'] ?? '',
@@ -1651,6 +1683,66 @@ class _CrearEditarEquipoDialogState extends State<_CrearEditarEquipoDialog> {
           child: const Text('Guardar'),
         ),
       ],
+    );
+  }
+
+  /// La ubicación a guardar: sin espacios sobrantes y, si equivale a una
+  /// que ya existe ("UCI ADULTO " = "UCI ADULTO", "EXPANSION" =
+  /// "EXPANSIÓN"), con la escritura de la existente — así un equipo nuevo
+  /// nunca crea una pestaña/ubicación repetida.
+  String _ubicacionFinal() {
+    final texto = TextUtils.limpiarEspacios(ubicacion.text);
+    return _ubicaciones[TextUtils.claveUbicacion(texto)]?.nombre ?? texto;
+  }
+
+  Widget _buildUbicacionField() {
+    final nombres = _ubicaciones.values.map((g) => g.nombre).toList()
+      ..sort();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: RawAutocomplete<String>(
+        textEditingController: ubicacion,
+        focusNode: _ubicacionFocus,
+        optionsBuilder: (valor) {
+          final q = TextUtils.claveUbicacion(valor.text);
+          if (q.isEmpty) return nombres;
+          return nombres
+              .where((n) => TextUtils.claveUbicacion(n).contains(q));
+        },
+        fieldViewBuilder: (_, controller, focusNode, onSubmit) => TextField(
+          controller: controller,
+          focusNode: focusNode,
+          textCapitalization: TextCapitalization.characters,
+          inputFormatters: MayusculasFormatter.lista,
+          decoration: const InputDecoration(
+            labelText: 'Ubicación / Servicio',
+            helperText: 'Elige una existente o escribe una nueva',
+          ),
+          onSubmitted: (_) => onSubmit(),
+        ),
+        optionsViewBuilder: (_, onSelected, opciones) => Align(
+          alignment: Alignment.topLeft,
+          child: Material(
+            elevation: 4,
+            child: ConstrainedBox(
+              constraints:
+                  const BoxConstraints(maxHeight: 220, maxWidth: 280),
+              child: ListView(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                children: [
+                  for (final o in opciones)
+                    ListTile(
+                      dense: true,
+                      title: Text(o),
+                      onTap: () => onSelected(o),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 

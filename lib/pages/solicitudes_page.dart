@@ -145,7 +145,9 @@ class _SolicitudesPageState extends State<SolicitudesPage> {
     if (archivo == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('No se pudo descargar la solicitud de la nube')),
+            content: Text('No se pudo descargar la solicitud de la nube'),
+            duration: const Duration(seconds: 2),
+            persist: false,),
       );
       return;
     }
@@ -157,6 +159,87 @@ class _SolicitudesPageState extends State<SolicitudesPage> {
           builder: (_) => NuevaSolicitudPage(archivoJson: archivo)),
     );
     if (mounted) await _cargarSolicitudes();
+  }
+
+  /// Baja de una vez todas las solicitudes de la nube del cliente activo
+  /// que este celular todavía no tiene (las de otros técnicos). Cada una
+  /// queda como archivo local en pendientes/, igual que al abrirla tocándola
+  /// (ver [_abrirDeNube]), así luego salen en "Compartir solicitudes".
+  Future<void> _descargarTodasDeNube() async {
+    final enNube = solicitudes.where((s) => s.file == null).toList();
+    if (enNube.isEmpty) return;
+
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Descargar solicitudes'),
+        content: Text(
+            '¿Descargar las ${enNube.length} solicitud(es) de la nube a este '
+            'celular? Quedarán como pendientes, listas para compartir.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar')),
+          ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Descargar')),
+        ],
+      ),
+    );
+    if (confirmar != true || !mounted) return;
+
+    final progreso = ValueNotifier<int>(0);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          content: Row(
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(width: 20),
+              Expanded(
+                child: ValueListenableBuilder<int>(
+                  valueListenable: progreso,
+                  builder: (_, n, __) =>
+                      Text('Descargando $n de ${enNube.length}...'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    var fallidas = 0;
+    // Una por una: cada descarga baja varias fotos, y en campo la señal
+    // suele ser débil — en paralelo fallarían más.
+    for (final meta in enNube) {
+      final archivo = await SolicitudesSync.descargarComoArchivoLocal(
+        clienteId: meta.clienteIdNube!,
+        equipoClave: meta.equipoClave!,
+      );
+      if (archivo == null) fallidas++;
+      progreso.value++;
+    }
+
+    if (!mounted) return;
+    Navigator.of(context, rootNavigator: true).pop(); // cierra el progreso
+    final bajadas = enNube.length - fallidas;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(fallidas == 0
+            ? '$bajadas solicitud(es) descargada(s) ✓'
+            : '$bajadas descargada(s), $fallidas fallaron (revisa la señal '
+                'e intenta de nuevo)'),
+        backgroundColor:
+            fallidas == 0 ? Colors.green.shade700 : Colors.orange.shade700,
+        duration: const Duration(seconds: 2),
+        persist: false,
+      ),
+    );
+    await _cargarSolicitudes();
   }
 
   Future<void> _eliminarSolicitud(_SolicitudMeta meta) async {
@@ -195,6 +278,8 @@ class _SolicitudesPageState extends State<SolicitudesPage> {
             norm(s.cliente).contains(_busqueda))
         .toList();
 
+    final enNubeCount = solicitudes.where((s) => s.file == null).length;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Solicitudes creadas')),
       body: Column(
@@ -229,6 +314,19 @@ class _SolicitudesPageState extends State<SolicitudesPage> {
               ],
             ),
           ),
+          if (enNubeCount > 0)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+              child: SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: _descargarTodasDeNube,
+                  icon: const Icon(Icons.cloud_download),
+                  label: Text(
+                      'Descargar todas las de la nube ($enNubeCount)'),
+                ),
+              ),
+            ),
           if (InventarioData.cliente.isEmpty)
             const Padding(
               padding: EdgeInsets.fromLTRB(12, 4, 12, 0),
