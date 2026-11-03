@@ -255,7 +255,7 @@ class _InventarioPageState extends State<InventarioPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
               content: Text('No se encontró nombre de cliente en el Excel'),
-              duration: const Duration(seconds: 2),
+              duration: Duration(seconds: 2),
               persist: false,),
         );
       }
@@ -338,7 +338,7 @@ class _InventarioPageState extends State<InventarioPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('Primero selecciona o carga un inventario'),
-            duration: const Duration(seconds: 2),
+            duration: Duration(seconds: 2),
             persist: false,),
       );
       return;
@@ -745,7 +745,7 @@ class _InventarioPageState extends State<InventarioPage> {
       await MontajesSync.desmarcar(_clienteId, equipo, texto);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Marca de montado quitada'), duration: const Duration(seconds: 2), persist: false,));
+            const SnackBar(content: Text('Marca de montado quitada'), duration: Duration(seconds: 2), persist: false,));
       }
     } catch (e) {
       if (mounted) {
@@ -1635,7 +1635,7 @@ class _CrearEditarEquipoDialogState extends State<_CrearEditarEquipoDialog> {
           onPressed: () {
             if (nombre.text.trim().isEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('El nombre es obligatorio'), duration: const Duration(seconds: 2), persist: false,),
+                const SnackBar(content: Text('El nombre es obligatorio'), duration: Duration(seconds: 2), persist: false,),
               );
               return;
             }
@@ -1644,7 +1644,7 @@ class _CrearEditarEquipoDialogState extends State<_CrearEditarEquipoDialog> {
                 const SnackBar(
                     content: Text(
                         'Escribe en Observaciones por qué está fuera de servicio'),
-                    duration: const Duration(seconds: 2),
+                    duration: Duration(seconds: 2),
                     persist: false,),
               );
               return;

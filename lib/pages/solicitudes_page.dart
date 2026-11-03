@@ -146,7 +146,7 @@ class _SolicitudesPageState extends State<SolicitudesPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('No se pudo descargar la solicitud de la nube'),
-            duration: const Duration(seconds: 2),
+            duration: Duration(seconds: 2),
             persist: false,),
       );
       return;
@@ -215,17 +215,28 @@ class _SolicitudesPageState extends State<SolicitudesPage> {
     var fallidas = 0;
     // Una por una: cada descarga baja varias fotos, y en campo la señal
     // suele ser débil — en paralelo fallarían más.
-    for (final meta in enNube) {
-      final archivo = await SolicitudesSync.descargarComoArchivoLocal(
-        clienteId: meta.clienteIdNube!,
-        equipoClave: meta.equipoClave!,
-      );
-      if (archivo == null) fallidas++;
-      progreso.value++;
+    // try/finally: el diálogo no se puede cerrar a mano (PopScope), así que
+    // si algo falla a mitad hay que cerrarlo igual o la pantalla queda
+    // bloqueada.
+    try {
+      for (final meta in enNube) {
+        File? archivo;
+        if (meta.clienteIdNube != null && meta.equipoClave != null) {
+          archivo = await SolicitudesSync.descargarComoArchivoLocal(
+            clienteId: meta.clienteIdNube!,
+            equipoClave: meta.equipoClave!,
+          );
+        }
+        if (archivo == null) fallidas++;
+        progreso.value++;
+      }
+    } finally {
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop(); // cierra el progreso
+      }
     }
 
     if (!mounted) return;
-    Navigator.of(context, rootNavigator: true).pop(); // cierra el progreso
     final bajadas = enNube.length - fallidas;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

@@ -57,7 +57,7 @@ class _HomePageState extends State<HomePage> {
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Solicitudes eliminadas'), duration: const Duration(seconds: 2), persist: false,),
+        const SnackBar(content: Text('Solicitudes eliminadas'), duration: Duration(seconds: 2), persist: false,),
       );
     }
   }
@@ -96,7 +96,7 @@ class _HomePageState extends State<HomePage> {
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Inventarios eliminados'), duration: const Duration(seconds: 2), persist: false,),
+        const SnackBar(content: Text('Inventarios eliminados'), duration: Duration(seconds: 2), persist: false,),
       );
     }
   }
@@ -187,7 +187,7 @@ class _HomePageState extends State<HomePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('No hay solicitudes para compartir'),
-            duration: const Duration(seconds: 2),
+            duration: Duration(seconds: 2),
             persist: false,),
       );
       return;
@@ -283,7 +283,7 @@ class _HomePageState extends State<HomePage> {
     if (context.mounted) {
       if (nombres.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No hay inventarios para exportar'), duration: const Duration(seconds: 2), persist: false,),
+          const SnackBar(content: Text('No hay inventarios para exportar'), duration: Duration(seconds: 2), persist: false,),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
