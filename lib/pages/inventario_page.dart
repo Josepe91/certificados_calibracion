@@ -45,6 +45,31 @@ class InventarioPage extends StatefulWidget {
 }
 
 class _InventarioPageState extends State<InventarioPage> {
+  // Caché de TextUtils.agruparUbicaciones: solo depende del inventario, no
+  // de la búsqueda/filtros — sin esto se recalculaba (agrupar + ordenar)
+  // en CADA letra escrita en el buscador, aunque las ubicaciones no hayan
+  // cambiado. `lista` es siempre la misma instancia mientras no cambien los
+  // equipos (InventarioData.equipos == equiposNotifier.value), así que
+  // comparar por identidad basta para saber si hay que recalcular.
+  List<Map<String, dynamic>>? _gruposCacheLista;
+  Map<String, ({String nombre, int cantidad})>? _gruposCache;
+  List<String>? _ubicacionesCache;
+
+  ({
+    Map<String, ({String nombre, int cantidad})> grupos,
+    List<String> ubicaciones
+  }) _grupos(List<Map<String, dynamic>> lista) {
+    if (!identical(lista, _gruposCacheLista)) {
+      _gruposCacheLista = lista;
+      final grupos = TextUtils.agruparUbicaciones(
+          lista.map((e) => e['ubicacion']));
+      _gruposCache = grupos;
+      _ubicacionesCache = grupos.keys.toList()
+        ..sort((a, b) => grupos[a]!.nombre.compareTo(grupos[b]!.nombre));
+    }
+    return (grupos: _gruposCache!, ubicaciones: _ubicacionesCache!);
+  }
+
   final TextEditingController _searchController = TextEditingController();
   final ValueNotifier<String> _busquedaNotifier = ValueNotifier('');
   final ValueNotifier<String?> _ubicacionFiltroNotifier = ValueNotifier(null);
@@ -918,11 +943,9 @@ class _InventarioPageState extends State<InventarioPage> {
 
                       // Ubicaciones equivalentes (espacios, tildes) se
                       // agrupan en una sola; el filtro guarda la CLAVE.
-                      final grupos = TextUtils.agruparUbicaciones(
-                          lista.map((e) => e['ubicacion']));
-                      final ubicaciones = grupos.keys.toList()
-                        ..sort((a, b) =>
-                            grupos[a]!.nombre.compareTo(grupos[b]!.nombre));
+                      // Memoizado en _grupos: no depende de la búsqueda, no
+                      // hay que recalcularlo en cada letra escrita.
+                      final (:grupos, :ubicaciones) = _grupos(lista);
                       final ubicFiltroNombre = ubicFiltro == null
                           ? null
                           : (grupos[ubicFiltro]?.nombre ?? ubicFiltro);
@@ -971,6 +994,19 @@ class _InventarioPageState extends State<InventarioPage> {
                       final pendientes = base
                           .where((e) => !esCalE(e) && !esBajaE(e))
                           .length;
+
+                      // Índice real en la lista completa por docId (misma
+                      // identidad estable que InventarioSync.docId/claveNube
+                      // de abajo), una sola pasada por build. Antes cada
+                      // tarjeta visible llamaba indexPorIdOCascada, que
+                      // recorre TODO el inventario buscando coincidencia —
+                      // con inventarios grandes eso se notaba al hacer
+                      // scroll o escribir en el buscador (cada tecla
+                      // reconstruye las tarjetas visibles).
+                      final indicePorDocId = <String, int>{
+                        for (var i = 0; i < lista.length; i++)
+                          InventarioSync.docId(lista[i]): i,
+                      };
 
                       return Column(
                         children: [
@@ -1115,13 +1151,8 @@ class _InventarioPageState extends State<InventarioPage> {
                                       !esMontado &&
                                       !esBaja;
 
-                                  // Buscar el índice real en la lista completa
-                                  // por id (identidad estable, no rompe con
-                                  // series/inventarios repetidos como "NO
-                                  // REGISTRA" compartidos entre equipos).
                                   final index =
-                                      InventarioData.indexPorIdOCascada(
-                                          lista, e);
+                                      indicePorDocId[claveNube] ?? -1;
 
                                   final Color avatarColor = esBaja
                                       ? Colors.grey.shade600
