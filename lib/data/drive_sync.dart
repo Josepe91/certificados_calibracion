@@ -12,6 +12,7 @@ import 'solicitudes_storage.dart';
 import '../utils/text_utils.dart';
 import 'inventario_sync.dart';
 import 'montajes_sync.dart';
+import 'plantillas_initializer.dart';
 
 class DriveSync {
   // ===============================
@@ -26,9 +27,10 @@ class DriveSync {
   // fecha (ya subidas a la nube), para poder mandarlas a Drive en bloque.
   // Retorna true si había archivos para compartir, false si no había nada.
   // ===============================
-  static Future<bool> syncSolicitudes({DateTime? enviadasDesde}) async {
-    final List<File> filesToSend = [];
-
+  static Future<bool> syncSolicitudes({
+    DateTime? enviadasDesde,
+    void Function(int hechos, int total)? onProgreso,
+  }) async {
     bool esJson(File f) => f.path.toLowerCase().endsWith('.json');
     final jsons = <File>[
       ...(await SolicitudesStorage.pendientesDir())
@@ -45,33 +47,90 @@ class DriveSync {
                 esJson(f) && f.lastModifiedSync().isAfter(enviadasDesde)),
     ];
 
-    for (final f in jsons) {
+    if (jsons.isEmpty) return false;
+
+    // Antes se regeneraba el .xlsx de TODAS las solicitudes, una tras otra,
+    // antes de abrir la ventana de compartir: con muchas solicitudes eso
+    // tardaba un buen rato sin mostrar nada. Ahora se reusa el .xlsx que ya
+    // dejó el guardado (si es más nuevo que el JSON y que las plantillas
+    // instaladas) y solo se generan los que faltan, varios a la vez.
+    final marcadorPlantillas = await _fechaPlantillas();
+    final porSolicitud = List<List<File>>.filled(jsons.length, const []);
+    var hechos = 0;
+    onProgreso?.call(0, jsons.length);
+
+    Future<void> procesar(int i) async {
+      final f = jsons[i];
+      final archivos = <File>[];
       File? xlsx;
       try {
-        xlsx = await CertificadoExcel.generarDesdeSolicitud(f);
+        xlsx = await _certificadoVigente(f, marcadorPlantillas) ??
+            await CertificadoExcel.generarDesdeSolicitud(f);
       } catch (e) {
         debugPrint('DriveSync: error generando certificado ${f.path}: $e');
       }
-      filesToSend.add(xlsx ?? f);
+      archivos.add(xlsx ?? f);
       var nombreZip = '';
       try {
-        nombreZip = (jsonDecode(await f.readAsString())['fotos_zip'] ?? '')
-            .toString();
+        nombreZip =
+            (jsonDecode(await f.readAsString())['fotos_zip'] ?? '').toString();
       } catch (_) {}
       if (nombreZip.isEmpty) {
-        nombreZip = p.basename(f.path)
+        nombreZip = p
+            .basename(f.path)
             .replaceAll(RegExp(r'\.json$', caseSensitive: false), '_fotos.zip');
       }
       final zip = File(p.join(f.parent.path, nombreZip));
-      if (await zip.exists()) filesToSend.add(zip);
+      if (await zip.exists()) archivos.add(zip);
+      porSolicitud[i] = archivos;
+      hechos++;
+      onProgreso?.call(hechos, jsons.length);
     }
 
+    // Hasta 3 certificados a la vez: más no acelera (cada uno ya corre en
+    // su propio isolate) y sí sube mucho la memoria en celulares modestos.
+    var siguiente = 0;
+    Future<void> trabajador() async {
+      while (siguiente < jsons.length) {
+        await procesar(siguiente++);
+      }
+    }
+
+    await Future.wait(List.generate(3, (_) => trabajador()));
+
+    final filesToSend = porSolicitud.expand((l) => l).toList();
     if (filesToSend.isEmpty) return false;
 
     await Share.shareXFiles(
       filesToSend.map((f) => XFile(f.path)).toList(),
     );
     return true;
+  }
+
+  /// El .xlsx ya generado de una solicitud, si sigue siendo válido: existe,
+  /// es más nuevo que el JSON (no hubo ediciones después) y más nuevo que
+  /// la copia actual de las plantillas (un build nuevo pudo corregir una).
+  /// Si no, null → hay que regenerarlo.
+  static Future<File?> _certificadoVigente(
+      File json, DateTime? fechaPlantillas) async {
+    final xlsx = File(CertificadoExcel.rutaCertificado(json.path));
+    if (!await xlsx.exists()) return null;
+    final fx = await xlsx.lastModified();
+    if (fx.isBefore(await json.lastModified())) return null;
+    if (fechaPlantillas != null && fx.isBefore(fechaPlantillas)) return null;
+    return xlsx;
+  }
+
+  /// Fecha en que se copiaron las plantillas del build instalado (marcador
+  /// de [PlantillasInitializer]). null si no se puede saber.
+  static Future<DateTime?> _fechaPlantillas() async {
+    try {
+      await PlantillasInitializer.inicializar();
+      final marcador =
+          File(p.join(await PlantillasInitializer.rutaLocal, '.build_copiado'));
+      if (await marcador.exists()) return await marcador.lastModified();
+    } catch (_) {}
+    return null;
   }
 
   // ===============================
@@ -111,8 +170,8 @@ class DriveSync {
 
         final nombreArchivo = 'INVENTARIO_$nombreCliente.xlsx';
         final tempFile = File(p.join(carpetaTemp.path, nombreArchivo));
-        final montajes = await MontajesSync.cargar(InventarioSync.slug(
-            data['cliente']?['nombre']?.toString() ?? ''));
+        final montajes = await MontajesSync.cargar(
+            InventarioSync.slug(data['cliente']?['nombre']?.toString() ?? ''));
         await tempFile
             .writeAsBytes(InventarioExcel.generar(data, montajes: montajes));
 

@@ -157,9 +157,9 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
         // Fecha del inventario si la oficina la diligenció en el Excel
         // (p. ej. calibraciones de otro mes); si no, la de hoy.
         final hoy = DateTime.now();
-        fechaController.text =
-            TextUtils.fechaIso(widget.equipoInicial!['fecha']?.toString()) ??
-                '${hoy.year}-${hoy.month.toString().padLeft(2, '0')}-${hoy.day.toString().padLeft(2, '0')}';
+        fechaController.text = TextUtils.fechaIso(
+                widget.equipoInicial!['fecha']?.toString()) ??
+            '${hoy.year}-${hoy.month.toString().padLeft(2, '0')}-${hoy.day.toString().padLeft(2, '0')}';
         _fechaNotifier.value = fechaController.text;
         _seleccionarEquipo(widget.equipoInicial!);
       }
@@ -654,7 +654,8 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
           ],
         ),
         backgroundColor: Colors.red.shade700,
-        duration: const Duration(seconds: 3),
+        duration: const Duration(seconds: 2),
+        persist: false,
       ),
     );
   }
@@ -700,8 +701,7 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
       equipoClave: InventarioSync.docId(equipoSeleccionado!),
     );
     final usos = <String>[
-      ...?enNube?.map((u) =>
-          '• ${u['equipo']} — ${u['cliente']}'
+      ...?enNube?.map((u) => '• ${u['equipo']} — ${u['cliente']}'
           '${(u['por'] ?? '').isNotEmpty ? ' (${u['por']})' : ''}'),
     ];
     if (equipoDuplicado != null && usos.isEmpty) {
@@ -1028,7 +1028,8 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
                 ],
               ),
               backgroundColor: Colors.orange.shade700,
-              duration: const Duration(seconds: 5),
+              duration: const Duration(seconds: 2),
+              persist: false,
             ),
           );
         } else {
@@ -1047,7 +1048,6 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
                 ],
               ),
               backgroundColor: Colors.green.shade700,
-              duration: const Duration(seconds: 6),
               action: xlsx == null
                   ? null
                   : SnackBarAction(
@@ -1055,6 +1055,8 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
                       textColor: Colors.white,
                       onPressed: () => Share.shareXFiles([XFile(xlsx.path)]),
                     ),
+              duration: const Duration(seconds: 2),
+              persist: false,
             ),
           );
         }

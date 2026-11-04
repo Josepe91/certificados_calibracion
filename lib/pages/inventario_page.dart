@@ -102,7 +102,11 @@ class _InventarioPageState extends State<InventarioPage> {
     _estadoFiltroNotifier.value = null;
     setState(() {});
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Inventario de $nombreCliente activado')),
+      SnackBar(
+        content: Text('Inventario de $nombreCliente activado'),
+        duration: const Duration(seconds: 2),
+        persist: false,
+      ),
     );
   }
 
@@ -162,7 +166,33 @@ class _InventarioPageState extends State<InventarioPage> {
     final bytes = result.files.single.bytes;
     if (bytes == null) return;
 
-    final excel = Excel.decodeBytes(bytes);
+    Excel excel;
+    try {
+      excel = Excel.decodeBytes(bytes);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('El archivo no es un Excel válido'),
+            duration: Duration(seconds: 2),
+            persist: false,
+          ),
+        );
+      }
+      return;
+    }
+    if (excel.tables.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('El Excel no tiene hojas'),
+            duration: Duration(seconds: 2),
+            persist: false,
+          ),
+        );
+      }
+      return;
+    }
     final sheet = excel.tables.values.first;
 
     // Validación ligera de encabezados: las columnas de datos del equipo
@@ -196,8 +226,7 @@ class _InventarioPageState extends State<InventarioPage> {
       for (int i = 0; i < columnas.length; i++) {
         final col = columnas[i];
         final texto = col < encabezado.length
-            ? TextUtils.quitarTildes(
-                    encabezado[col]?.value?.toString() ?? '')
+            ? TextUtils.quitarTildes(encabezado[col]?.value?.toString() ?? '')
                 .toLowerCase()
             : '';
         if (!texto.contains(esperado[i])) {
@@ -254,7 +283,10 @@ class _InventarioPageState extends State<InventarioPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('No se encontró nombre de cliente en el Excel')),
+            content: Text('No se encontró nombre de cliente en el Excel'),
+            duration: Duration(seconds: 2),
+            persist: false,
+          ),
         );
       }
       return;
@@ -303,7 +335,8 @@ class _InventarioPageState extends State<InventarioPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(mensaje),
-          duration: const Duration(seconds: 4),
+          duration: const Duration(seconds: 2),
+          persist: false,
         ),
       );
     }
@@ -334,7 +367,10 @@ class _InventarioPageState extends State<InventarioPage> {
     if (InventarioData.clienteActivo == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Primero selecciona o carga un inventario')),
+          content: Text('Primero selecciona o carga un inventario'),
+          duration: Duration(seconds: 2),
+          persist: false,
+        ),
       );
       return;
     }
@@ -448,8 +484,8 @@ class _InventarioPageState extends State<InventarioPage> {
   // Para el admin la etiqueta "Por montar"/"Montado" es el botón para
   // marcar/desmarcar (con su confirmación): no ocupa otro ícono en la
   // tarjeta que le quite ancho al nombre del equipo.
-  Widget _badgeMontaje(Map<String, dynamic> e, bool calibrado, bool montado,
-      bool habilitado) {
+  Widget _badgeMontaje(
+      Map<String, dynamic> e, bool calibrado, bool montado, bool habilitado) {
     final badge = _estadoBadge(calibrado, montado: montado);
     if (!calibrado || !AuthTecnico.esAdmin || !habilitado) return badge;
     return InkWell(
@@ -670,14 +706,20 @@ class _InventarioPageState extends State<InventarioPage> {
       _seleccion.value = null;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(uno
-                ? 'Certificado marcado como montado'
-                : '${equipos.length} certificados marcados como montados')));
+          content: Text(uno
+              ? 'Certificado marcado como montado'
+              : '${equipos.length} certificados marcados como montados'),
+          duration: const Duration(seconds: 2),
+          persist: false,
+        ));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('No se pudo marcar: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('No se pudo marcar: $e'),
+          duration: const Duration(seconds: 2),
+          persist: false,
+        ));
       }
     }
   }
@@ -737,13 +779,19 @@ class _InventarioPageState extends State<InventarioPage> {
     try {
       await MontajesSync.desmarcar(_clienteId, equipo, texto);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Marca de montado quitada')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Marca de montado quitada'),
+          duration: Duration(seconds: 2),
+          persist: false,
+        ));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('No se pudo quitar: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('No se pudo quitar: $e'),
+          duration: const Duration(seconds: 2),
+          persist: false,
+        ));
       }
     }
   }
@@ -844,17 +892,9 @@ class _InventarioPageState extends State<InventarioPage> {
                   ),
                   const Divider(height: 1),
                 ],
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: const InputDecoration(
-                      labelText: 'Buscar por nombre, serie o inventario',
-                      prefixIcon: Icon(Icons.search),
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
+                // El buscador y la ubicación van juntos en una sola fila
+                // compacta, dentro del builder (ver abajo), para que la
+                // píldora de ubicación muestre los conteos al día.
                 Expanded(
                   child: ListenableBuilder(
                     listenable: Listenable.merge([
@@ -876,127 +916,109 @@ class _InventarioPageState extends State<InventarioPage> {
                       final montajes = MontajesSync.notifier.value;
                       final seleccion = _seleccion.value;
 
-                      final ubicaciones = lista
-                          .map((e) => e['ubicacion']?.toString() ?? '')
-                          .where((u) => u.isNotEmpty)
-                          .toSet()
-                          .toList()
-                        ..sort();
+                      // Ubicaciones equivalentes (espacios, tildes) se
+                      // agrupan en una sola; el filtro guarda la CLAVE.
+                      final grupos = TextUtils.agruparUbicaciones(
+                          lista.map((e) => e['ubicacion']));
+                      final ubicaciones = grupos.keys.toList()
+                        ..sort((a, b) =>
+                            grupos[a]!.nombre.compareTo(grupos[b]!.nombre));
+                      final ubicFiltroNombre = ubicFiltro == null
+                          ? null
+                          : (grupos[ubicFiltro]?.nombre ?? ubicFiltro);
 
                       String norm(dynamic v) =>
                           TextUtils.quitarTildes(v.toString()).toLowerCase();
-                      final mostrar = lista.where((e) {
+                      bool esCalE(Map e) =>
+                          (e['certificado']?.toString().trim() ?? '')
+                              .isNotEmpty;
+                      bool esBajaE(Map e) => e['fuera_de_servicio'] == true;
+
+                      // Base = búsqueda + ubicación. Los conteos de los
+                      // chips de estado salen de aquí (no de la lista ya
+                      // filtrada por estado), así "Calibrados" no marca 0
+                      // solo porque estás viendo "Pendientes".
+                      final base = lista.where((e) {
                         final matchSearch = q.isEmpty ||
                             norm(e['serie']).contains(q) ||
                             norm(e['inventario']).contains(q) ||
                             norm(e['nombre']).contains(q);
                         final matchUbic = ubicFiltro == null ||
-                            e['ubicacion'].toString() == ubicFiltro;
-                        final esCal =
-                            (e['certificado']?.toString().trim() ?? '')
-                                .isNotEmpty;
-                        final esBaja = e['fuera_de_servicio'] == true;
+                            TextUtils.claveUbicacion(e['ubicacion']) ==
+                                ubicFiltro;
+                        return matchSearch && matchUbic;
+                      }).toList();
+
+                      final mostrar = base.where((e) {
+                        final esCal = esCalE(e);
+                        final esBaja = esBajaE(e);
                         final matchEstado = estadoFiltro == null ||
                             (estadoFiltro == 'calibrado' && esCal) ||
                             (estadoFiltro == 'pendiente' &&
                                 !esCal &&
                                 !esBaja) ||
                             (estadoFiltro == 'baja' && esBaja);
-                        final montado =
-                            MontajesSync.estaMontado(e, montajes);
+                        final montado = MontajesSync.estaMontado(e, montajes);
                         final matchMontaje = estadoFiltro != 'calibrado' ||
                             montajeFiltro == null ||
                             (montajeFiltro == 'montado' && montado) ||
                             (montajeFiltro == 'por_montar' && !montado);
-                        return matchSearch &&
-                            matchUbic &&
-                            matchEstado &&
-                            matchMontaje;
+                        return matchEstado && matchMontaje;
                       }).toList();
 
-                      final calibrados = mostrar
-                          .where((e) =>
-                              (e['certificado']?.toString().trim() ?? '')
-                                  .isNotEmpty)
+                      final calibrados = base.where(esCalE).length;
+                      final fuera = base.where(esBajaE).length;
+                      final pendientes = base
+                          .where((e) => !esCalE(e) && !esBajaE(e))
                           .length;
-                      final fuera = mostrar
-                          .where((e) => e['fuera_de_servicio'] == true)
-                          .length;
-                      final pendientes = mostrar.length - calibrados - fuera;
 
                       return Column(
                         children: [
-                          if (ubicaciones.isNotEmpty)
-                            SizedBox(
-                              height: 48,
-                              child: ListView(
-                                scrollDirection: Axis.horizontal,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 6),
-                                children: [
-                                  FilterChip(
-                                    label: const Text('Todas'),
-                                    selected: ubicFiltro == null,
-                                    onSelected: (_) =>
-                                        _ubicacionFiltroNotifier.value = null,
-                                  ),
-                                  ...ubicaciones.map((u) => Padding(
-                                        padding: const EdgeInsets.only(left: 6),
-                                        child: FilterChip(
-                                          label: Text(u),
-                                          selected: ubicFiltro == u,
-                                          onSelected: (_) =>
-                                              _ubicacionFiltroNotifier.value =
-                                                  ubicFiltro == u ? null : u,
-                                        ),
-                                      )),
-                                ],
-                              ),
-                            ),
+                          // Fila compacta: buscador + píldora de ubicación.
                           Padding(
-                            padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
-                            child: SegmentedButton<String?>(
-                              segments: const [
-                                ButtonSegment(
-                                  value: null,
-                                  label: Text('Todos'),
-                                  icon: Icon(Icons.list, size: 16),
-                                ),
-                                ButtonSegment(
-                                  value: 'calibrado',
-                                  label: Text('Calibrados'),
-                                  icon: Icon(Icons.check_circle_outline,
-                                      size: 16),
-                                ),
-                                ButtonSegment(
-                                  value: 'pendiente',
-                                  label: Text('Pendientes'),
-                                  icon: Icon(Icons.pending_outlined, size: 16),
-                                ),
-                                ButtonSegment(
-                                  value: 'baja',
-                                  label: Text('Baja'),
-                                  icon: Icon(Icons.block_outlined, size: 16),
-                                ),
+                            padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+                            child: Row(
+                              children: [
+                                Expanded(child: _campoBusqueda()),
+                                if (ubicaciones.isNotEmpty) ...[
+                                  const SizedBox(width: 8),
+                                  _pildoraUbicacion(
+                                    nombre: ubicFiltroNombre,
+                                    cantidad: ubicFiltro == null
+                                        ? lista.length
+                                        : (grupos[ubicFiltro]?.cantidad ?? 0),
+                                    onTap: () => _elegirUbicacion(
+                                        grupos, ubicaciones, ubicFiltro),
+                                  ),
+                                ],
                               ],
-                              selected: {estadoFiltro},
-                              onSelectionChanged: (sel) {
-                                _estadoFiltroNotifier.value = sel.first;
-                                if (sel.first != 'calibrado') {
-                                  _montajeFiltroNotifier.value = null;
-                                }
-                              },
-                              style: ButtonStyle(
-                                visualDensity: VisualDensity.compact,
-                                textStyle: WidgetStateProperty.all(
-                                    const TextStyle(fontSize: 11)),
-                              ),
+                            ),
+                          ),
+                          // Chips de estado con su conteo (reemplazan los
+                          // botones segmentados, que se partían en el
+                          // celular, y la franja de contadores aparte).
+                          SizedBox(
+                            height: 40,
+                            child: ListView(
+                              scrollDirection: Axis.horizontal,
+                              padding:
+                                  const EdgeInsets.fromLTRB(12, 0, 12, 6),
+                              children: [
+                                _chipEstado(null, 'Todos', base.length,
+                                    Colors.blueGrey, estadoFiltro),
+                                _chipEstado('pendiente', 'Pendientes',
+                                    pendientes, Colors.orange, estadoFiltro),
+                                _chipEstado('calibrado', 'Calibrados',
+                                    calibrados, Colors.green, estadoFiltro),
+                                if (fuera > 0 || estadoFiltro == 'baja')
+                                  _chipEstado('baja', 'Baja', fuera,
+                                      Colors.red, estadoFiltro),
+                              ],
                             ),
                           ),
                           if (estadoFiltro == 'calibrado')
                             Padding(
-                              padding:
-                                  const EdgeInsets.fromLTRB(12, 0, 12, 4),
+                              padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
                               child: Row(
                                 children: [
                                   for (final o in const [
@@ -1042,49 +1064,6 @@ class _InventarioPageState extends State<InventarioPage> {
                                 ],
                               ),
                             ),
-                          if (mostrar.isNotEmpty)
-                            Container(
-                              width: double.infinity,
-                              color: Colors.grey.shade50,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 6),
-                              child: Row(
-                                children: [
-                                  if (ubicFiltro != null) ...[
-                                    Icon(Icons.location_on,
-                                        size: 13, color: Colors.blue.shade600),
-                                    const SizedBox(width: 4),
-                                    Expanded(
-                                      child: Text(
-                                        ubicFiltro,
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 12,
-                                            color: Colors.blue.shade700),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                  ] else
-                                    const Expanded(
-                                      child: Text(
-                                        'Todos los servicios',
-                                        style: TextStyle(
-                                            fontSize: 12, color: Colors.grey),
-                                      ),
-                                    ),
-                                  _contadorChip(
-                                      calibrados, Colors.green, 'calibrados'),
-                                  const SizedBox(width: 6),
-                                  _contadorChip(
-                                      pendientes, Colors.orange, 'pendientes'),
-                                  if (fuera > 0) ...[
-                                    const SizedBox(width: 6),
-                                    _contadorChip(fuera, Colors.red, 'baja'),
-                                  ],
-                                ],
-                              ),
-                            ),
                           if (mostrar.isEmpty)
                             Expanded(
                               child: Center(
@@ -1126,8 +1105,8 @@ class _InventarioPageState extends State<InventarioPage> {
                                   final tieneInv =
                                       e['inventario']?.toString().isNotEmpty ??
                                           false;
-                                  final montaje = montajes[
-                                      InventarioSync.docId(e)];
+                                  final montaje =
+                                      montajes[InventarioSync.docId(e)];
                                   final esMontado =
                                       MontajesSync.estaMontado(e, montajes);
                                   final claveNube = InventarioSync.docId(e);
@@ -1154,191 +1133,36 @@ class _InventarioPageState extends State<InventarioPage> {
                                                   ? Colors.green
                                                   : Colors.orange.shade700;
 
+                                  // Texto secundario más chico y gris.
+                                  TextStyle sub(Color c) =>
+                                      TextStyle(fontSize: 11.5, color: c);
+                                  String dato(dynamic v) {
+                                    final s = v?.toString().trim() ?? '';
+                                    return (s.isEmpty ||
+                                            TextUtils.quitarTildes(s)
+                                                    .toUpperCase() ==
+                                                'NO REGISTRA')
+                                        ? '—'
+                                        : s;
+                                  }
+
+                                  // Tarjeta compacta: franja de color a la
+                                  // izquierda con el estado, nombre en una
+                                  // línea completa (sin la etiqueta
+                                  // "Pendiente", que ya la dice el color) y
+                                  // "Eliminar" dentro del menú ⋮ para no
+                                  // quitarle ancho al nombre.
                                   return Card(
                                     margin: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 4),
-                                    child: ListTile(
-                                      leading: seleccion != null
-                                          ? Checkbox(
-                                              value: seleccion
-                                                  .contains(claveNube),
-                                              onChanged: seleccionable
-                                                  ? (_) => _alternarSeleccion(
-                                                      claveNube)
-                                                  : null,
-                                            )
-                                          : CircleAvatar(
-                                        backgroundColor: avatarColor,
-                                        child: Icon(
-                                          esBaja
-                                              ? Icons.block_outlined
-                                              : noPasaCalibracion
-                                                  ? Icons.report_problem
-                                                  : esCalibrado
-                                                      ? Icons.check
-                                                      : Icons.pending_outlined,
-                                          color: Colors.white,
-                                          size: 18,
-                                        ),
-                                      ),
-                                      title: Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              e['nombre']?.toString() ?? '',
-                                              style: TextStyle(
-                                                color: esNuevo
-                                                    ? Colors.red
-                                                    : Colors.black87,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          if (esBaja)
-                                            _badgeFueraDeServicio()
-                                          else if (noPasaCalibracion)
-                                            _badgeNoPasaCalibracion()
-                                          else
-                                            _badgeMontaje(e, esCalibrado,
-                                                esMontado, seleccion == null),
-                                        ],
-                                      ),
-                                      subtitle: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          // Si no tiene serie ni inventario,
-                                          // mostrar badge "Por identificar".
-                                          if (!tieneSerie && !tieneInv)
-                                            Padding(
-                                              padding: const EdgeInsets.only(
-                                                  top: 2, bottom: 2),
-                                              child: _badgePorIdentificar(),
-                                            )
-                                          else
-                                            Text(
-                                                'Serie: ${e['serie']} | Inv: ${e['inventario']}'),
-                                          if ((e['ubicacion']
-                                                  ?.toString()
-                                                  .isNotEmpty ??
-                                              false))
-                                            Row(
-                                              children: [
-                                                Icon(Icons.location_on,
-                                                    size: 11,
-                                                    color:
-                                                        Colors.grey.shade500),
-                                                const SizedBox(width: 2),
-                                                Text(
-                                                  e['ubicacion'],
-                                                  style: TextStyle(
-                                                      fontSize: 11,
-                                                      color:
-                                                          Colors.grey.shade600),
-                                                ),
-                                              ],
-                                            ),
-                                          if (esCalibrado &&
-                                              (e['fecha']
-                                                      ?.toString()
-                                                      .isNotEmpty ??
-                                                  false))
-                                            Text(
-                                              'Cert: ${e['certificado']} · ${e['fecha']}',
-                                              style: TextStyle(
-                                                  fontSize: 11,
-                                                  color: Colors.green.shade700),
-                                            ),
-                                          if (esMontado)
-                                            Text(
-                                              'Montado por ${montaje?['montado_por'] ?? ''}'
-                                              '${fechaCorta(montaje?['montado_en']).isNotEmpty ? ' · ${fechaCorta(montaje?['montado_en'])}' : ''}',
-                                              style: TextStyle(
-                                                  fontSize: 11,
-                                                  color: Colors.teal.shade700),
-                                            ),
-                                          if ((e['observaciones']
-                                                  ?.toString()
-                                                  .isNotEmpty ??
-                                              false))
-                                            Text(
-                                              'Obs: ${e['observaciones']}',
-                                              style: TextStyle(
-                                                  fontSize: 11,
-                                                  color: Colors.grey.shade700),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          if (esBaja &&
-                                              (e['fuera_de_servicio_por']
-                                                      ?.toString()
-                                                      .isNotEmpty ??
-                                                  false))
-                                            Text(
-                                              'Marcado por: ${e['fuera_de_servicio_por']}',
-                                              style: TextStyle(
-                                                  fontSize: 11,
-                                                  color: Colors.red.shade400),
-                                            ),
-                                          if (noPasaCalibracion)
-                                            Text(
-                                              (e['no_pasa_calibracion_detalle']
-                                                          ?.toString()
-                                                          .isNotEmpty ??
-                                                      false)
-                                                  ? 'No pasa: ${e['no_pasa_calibracion_detalle']}'
-                                                  : 'No pasa calibración',
-                                              style: TextStyle(
-                                                  fontSize: 11,
-                                                  color: Colors
-                                                      .deepOrange.shade700),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          if (noPasaCalibracion &&
-                                              (e['no_pasa_calibracion_por']
-                                                      ?.toString()
-                                                      .isNotEmpty ??
-                                                  false))
-                                            Text(
-                                              'Confirmado por: ${e['no_pasa_calibracion_por']}',
-                                              style: TextStyle(
-                                                  fontSize: 11,
-                                                  color: Colors
-                                                      .deepOrange.shade400),
-                                            ),
-                                        ],
-                                      ),
-                                      isThreeLine: true,
-                                      trailing: index != -1 &&
-                                              seleccion == null
-                                          ? Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                if (!esCalibrado && !esBaja)
-                                                  IconButton(
-                                                    icon: Icon(
-                                                        Icons.add_task,
-                                                        color: Colors
-                                                            .blue.shade600),
-                                                    tooltip: 'Crear solicitud',
-                                                    onPressed: () =>
-                                                        _crearSolicitudPara(e),
-                                                  ),
-                                                IconButton(
-                                                  icon: Icon(
-                                                      Icons.delete_outline,
-                                                      color:
-                                                          Colors.red.shade300),
-                                                  tooltip: 'Eliminar equipo',
-                                                  onPressed: () =>
-                                                      _eliminarEquipo(
-                                                          e, index),
-                                                ),
-                                              ],
-                                            )
-                                          : null,
+                                        horizontal: 10, vertical: 3),
+                                    elevation: 0.6,
+                                    clipBehavior: Clip.antiAlias,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      side: BorderSide(
+                                          color: Colors.grey.shade200),
+                                    ),
+                                    child: InkWell(
                                       onTap: seleccion != null
                                           ? (seleccionable
                                               ? () =>
@@ -1347,6 +1171,273 @@ class _InventarioPageState extends State<InventarioPage> {
                                           : index != -1
                                               ? () => _editarEquipo(e, index)
                                               : null,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          border: Border(
+                                            left: BorderSide(
+                                                color: avatarColor, width: 4),
+                                          ),
+                                        ),
+                                        padding: const EdgeInsets.fromLTRB(
+                                            10, 8, 2, 8),
+                                        child: Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            if (seleccion != null)
+                                              SizedBox(
+                                                width: 32,
+                                                height: 32,
+                                                child: Checkbox(
+                                                  value: seleccion
+                                                      .contains(claveNube),
+                                                  onChanged: seleccionable
+                                                      ? (_) =>
+                                                          _alternarSeleccion(
+                                                              claveNube)
+                                                      : null,
+                                                ),
+                                              )
+                                            else
+                                              CircleAvatar(
+                                                radius: 15,
+                                                backgroundColor: avatarColor
+                                                    .withValues(alpha: 0.12),
+                                                child: Icon(
+                                                  esBaja
+                                                      ? Icons.block_outlined
+                                                      : noPasaCalibracion
+                                                          ? Icons
+                                                              .report_problem
+                                                          : esCalibrado
+                                                              ? Icons.check
+                                                              : Icons
+                                                                  .pending_outlined,
+                                                  color: avatarColor,
+                                                  size: 17,
+                                                ),
+                                              ),
+                                            const SizedBox(width: 10),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    e['nombre']?.toString() ??
+                                                        '',
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: TextStyle(
+                                                      fontSize: 14.5,
+                                                      height: 1.2,
+                                                      color: esNuevo
+                                                          ? Colors.red
+                                                          : Colors.black87,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 2),
+                                                  if (!tieneSerie && !tieneInv)
+                                                    Padding(
+                                                      padding:
+                                                          const EdgeInsets
+                                                              .only(top: 2),
+                                                      child:
+                                                          _badgePorIdentificar(),
+                                                    )
+                                                  else
+                                                    Text(
+                                                      'Serie: ${dato(e['serie'])}  ·  Inv: ${dato(e['inventario'])}',
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow
+                                                          .ellipsis,
+                                                      style: sub(Colors
+                                                          .grey.shade700),
+                                                    ),
+                                                  // La ubicación solo se
+                                                  // muestra si no estás ya
+                                                  // filtrando por una.
+                                                  if (ubicFiltro == null &&
+                                                      (e['ubicacion']
+                                                              ?.toString()
+                                                              .isNotEmpty ??
+                                                          false))
+                                                    Row(
+                                                      children: [
+                                                        Icon(
+                                                            Icons
+                                                                .location_on_outlined,
+                                                            size: 12,
+                                                            color: Colors.grey
+                                                                .shade500),
+                                                        const SizedBox(
+                                                            width: 2),
+                                                        Flexible(
+                                                          child: Text(
+                                                            e['ubicacion']
+                                                                .toString(),
+                                                            maxLines: 1,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                            style: sub(Colors
+                                                                .grey
+                                                                .shade600),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  if (esBaja ||
+                                                      noPasaCalibracion ||
+                                                      esCalibrado)
+                                                    Padding(
+                                                      padding:
+                                                          const EdgeInsets
+                                                              .only(top: 4),
+                                                      child: esBaja
+                                                          ? _badgeFueraDeServicio()
+                                                          : noPasaCalibracion
+                                                              ? _badgeNoPasaCalibracion()
+                                                              : _badgeMontaje(
+                                                                  e,
+                                                                  esCalibrado,
+                                                                  esMontado,
+                                                                  seleccion ==
+                                                                      null),
+                                                    ),
+                                                  if (esCalibrado &&
+                                                      (e['fecha']
+                                                              ?.toString()
+                                                              .isNotEmpty ??
+                                                          false))
+                                                    Text(
+                                                      'Cert: ${e['certificado']} · ${e['fecha']}',
+                                                      style: sub(Colors
+                                                          .green.shade700),
+                                                    ),
+                                                  if (esMontado)
+                                                    Text(
+                                                      'Montado por ${montaje?['montado_por'] ?? ''}'
+                                                      '${fechaCorta(montaje?['montado_en']).isNotEmpty ? ' · ${fechaCorta(montaje?['montado_en'])}' : ''}',
+                                                      style: sub(Colors
+                                                          .teal.shade700),
+                                                    ),
+                                                  if ((e['observaciones']
+                                                          ?.toString()
+                                                          .isNotEmpty ??
+                                                      false))
+                                                    Text(
+                                                      'Obs: ${e['observaciones']}',
+                                                      style: sub(Colors
+                                                          .grey.shade700),
+                                                      maxLines: 2,
+                                                      overflow: TextOverflow
+                                                          .ellipsis,
+                                                    ),
+                                                  if (esBaja &&
+                                                      (e['fuera_de_servicio_por']
+                                                              ?.toString()
+                                                              .isNotEmpty ??
+                                                          false))
+                                                    Text(
+                                                      'Marcado por: ${e['fuera_de_servicio_por']}',
+                                                      style: sub(Colors
+                                                          .red.shade400),
+                                                    ),
+                                                  if (noPasaCalibracion)
+                                                    Text(
+                                                      (e['no_pasa_calibracion_detalle']
+                                                                  ?.toString()
+                                                                  .isNotEmpty ??
+                                                              false)
+                                                          ? 'No pasa: ${e['no_pasa_calibracion_detalle']}'
+                                                          : 'No pasa calibración',
+                                                      style: sub(Colors
+                                                          .deepOrange
+                                                          .shade700),
+                                                      maxLines: 2,
+                                                      overflow: TextOverflow
+                                                          .ellipsis,
+                                                    ),
+                                                  if (noPasaCalibracion &&
+                                                      (e['no_pasa_calibracion_por']
+                                                              ?.toString()
+                                                              .isNotEmpty ??
+                                                          false))
+                                                    Text(
+                                                      'Confirmado por: ${e['no_pasa_calibracion_por']}',
+                                                      style: sub(Colors
+                                                          .deepOrange
+                                                          .shade400),
+                                                    ),
+                                                ],
+                                              ),
+                                            ),
+                                            if (index != -1 &&
+                                                seleccion == null) ...[
+                                              if (!esCalibrado && !esBaja)
+                                                IconButton(
+                                                  visualDensity:
+                                                      VisualDensity.compact,
+                                                  icon: Icon(Icons.add_task,
+                                                      color: Colors
+                                                          .blue.shade600),
+                                                  tooltip: 'Crear solicitud',
+                                                  onPressed: () =>
+                                                      _crearSolicitudPara(e),
+                                                ),
+                                              PopupMenuButton<String>(
+                                                tooltip: 'Más opciones',
+                                                icon: Icon(Icons.more_vert,
+                                                    size: 20,
+                                                    color:
+                                                        Colors.grey.shade600),
+                                                padding: EdgeInsets.zero,
+                                                onSelected: (op) {
+                                                  if (op == 'editar') {
+                                                    _editarEquipo(e, index);
+                                                  } else if (op ==
+                                                      'eliminar') {
+                                                    _eliminarEquipo(e, index);
+                                                  }
+                                                },
+                                                itemBuilder: (_) => [
+                                                  const PopupMenuItem(
+                                                    value: 'editar',
+                                                    child: ListTile(
+                                                      dense: true,
+                                                      contentPadding:
+                                                          EdgeInsets.zero,
+                                                      leading: Icon(
+                                                          Icons.edit_outlined),
+                                                      title: Text('Editar'),
+                                                    ),
+                                                  ),
+                                                  PopupMenuItem(
+                                                    value: 'eliminar',
+                                                    child: ListTile(
+                                                      dense: true,
+                                                      contentPadding:
+                                                          EdgeInsets.zero,
+                                                      leading: Icon(
+                                                          Icons.delete_outline,
+                                                          color: Colors
+                                                              .red.shade400),
+                                                      title: Text('Eliminar',
+                                                          style: TextStyle(
+                                                              color: Colors.red
+                                                                  .shade400)),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
                                     ),
                                   );
                                 },
@@ -1373,8 +1464,7 @@ class _InventarioPageState extends State<InventarioPage> {
                 onPressed: sel.isEmpty
                     ? null
                     : () => _confirmarMontar(InventarioData.equipos
-                        .where(
-                            (e) => sel.contains(InventarioSync.docId(e)))
+                        .where((e) => sel.contains(InventarioSync.docId(e)))
                         .toList()),
                 icon: const Icon(Icons.verified),
                 label: Text('Marcar ${sel.length} montados'),
@@ -1383,20 +1473,302 @@ class _InventarioPageState extends State<InventarioPage> {
     );
   }
 
-  Widget _contadorChip(int cantidad, Color color, String etiqueta) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.4), width: 0.8),
-      ),
-      child: Text(
-        '$cantidad $etiqueta',
-        style:
-            TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color),
+  // ---- Barra de filtros compacta ----
+
+  Widget _campoBusqueda() {
+    return SizedBox(
+      height: 44,
+      child: ValueListenableBuilder<TextEditingValue>(
+        valueListenable: _searchController,
+        builder: (_, v, __) => TextField(
+          controller: _searchController,
+          style: const TextStyle(fontSize: 14),
+          textAlignVertical: TextAlignVertical.center,
+          decoration: InputDecoration(
+            hintText: 'Buscar equipo, serie o inv.',
+            hintStyle: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+            prefixIcon: Icon(Icons.search, size: 20, color: Colors.grey.shade600),
+            prefixIconConstraints: const BoxConstraints(minWidth: 38),
+            suffixIcon: v.text.isEmpty
+                ? null
+                : IconButton(
+                    icon: const Icon(Icons.close, size: 18),
+                    tooltip: 'Borrar búsqueda',
+                    onPressed: () => _searchController.clear(),
+                  ),
+            isDense: true,
+            filled: true,
+            fillColor: Colors.grey.shade100,
+            contentPadding: const EdgeInsets.symmetric(vertical: 10),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(color: Colors.blue.shade300),
+            ),
+          ),
+        ),
       ),
     );
+  }
+
+  /// Píldora con la ubicación activa. Azul lleno cuando hay un servicio
+  /// elegido; azul suave cuando se ven todos.
+  Widget _pildoraUbicacion({
+    required String? nombre,
+    required int cantidad,
+    required VoidCallback onTap,
+  }) {
+    final activa = nombre != null;
+    final fondo = activa ? Colors.blue.shade700 : Colors.blue.shade50;
+    final texto = activa ? Colors.white : Colors.blue.shade800;
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+          maxWidth: MediaQuery.sizeOf(context).width * 0.46),
+      child: Material(
+        color: fondo,
+        borderRadius: BorderRadius.circular(22),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: onTap,
+          child: Container(
+            height: 44,
+            padding: const EdgeInsets.only(left: 10, right: 6),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.location_on, size: 18, color: texto),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    nombre ?? 'Todas',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
+                        color: texto),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: activa
+                        ? Colors.white.withValues(alpha: 0.22)
+                        : Colors.blue.shade100,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text('$cantidad',
+                      style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: texto)),
+                ),
+                Icon(Icons.arrow_drop_down, size: 20, color: texto),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _chipEstado(String? valor, String etiqueta, int cantidad,
+      MaterialColor color, String? actual) {
+    final sel = actual == valor;
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: ChoiceChip(
+        showCheckmark: false,
+        visualDensity: VisualDensity.compact,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        shape: StadiumBorder(
+            side: BorderSide(
+                color: sel ? color.shade400 : Colors.grey.shade300)),
+        backgroundColor: Colors.white,
+        selectedColor: color.shade50,
+        selected: sel,
+        onSelected: (_) {
+          _estadoFiltroNotifier.value = valor;
+          if (valor != 'calibrado') _montajeFiltroNotifier.value = null;
+        },
+        label: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(etiqueta,
+                style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
+                    color: sel ? color.shade800 : Colors.grey.shade800)),
+            const SizedBox(width: 5),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+              decoration: BoxDecoration(
+                color: sel ? color.shade600 : color.shade50,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text('$cantidad',
+                  style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: sel ? Colors.white : color.shade800)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Hoja inferior para elegir el servicio: buscador + lista con el avance
+  /// de calibración de cada ubicación.
+  Future<void> _elegirUbicacion(
+    Map<String, ({String nombre, int cantidad})> grupos,
+    List<String> ubicaciones,
+    String? actual,
+  ) async {
+    final calPorClave = <String, int>{};
+    var calTotal = 0;
+    for (final e in InventarioData.equipos) {
+      if ((e['certificado']?.toString().trim() ?? '').isEmpty) continue;
+      calTotal++;
+      final k = TextUtils.claveUbicacion(e['ubicacion']);
+      calPorClave[k] = (calPorClave[k] ?? 0) + 1;
+    }
+    final total = InventarioData.equipos.length;
+    var filtro = '';
+
+    final elegido = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) {
+          final f = TextUtils.quitarTildes(filtro).toLowerCase();
+          final visibles = ubicaciones
+              .where((u) => TextUtils.quitarTildes(grupos[u]!.nombre)
+                  .toLowerCase()
+                  .contains(f))
+              .toList();
+
+          Widget fila(String clave, String nombre, int cant, int cal,
+              {bool todas = false}) {
+            final sel = todas ? actual == null : actual == clave;
+            final avance = cant == 0 ? 0.0 : cal / cant;
+            return ListTile(
+              dense: true,
+              selected: sel,
+              selectedTileColor: Colors.blue.shade50,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              leading: CircleAvatar(
+                radius: 17,
+                backgroundColor:
+                    sel ? Colors.blue.shade700 : Colors.blue.shade50,
+                child: Icon(todas ? Icons.apps : Icons.location_on,
+                    size: 18,
+                    color: sel ? Colors.white : Colors.blue.shade700),
+              ),
+              title: Text(nombre,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w600)),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: avance,
+                          minHeight: 5,
+                          backgroundColor: Colors.grey.shade200,
+                          color: avance >= 1
+                              ? Colors.green
+                              : Colors.green.shade400,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text('$cal/$cant',
+                        style: TextStyle(
+                            fontSize: 11.5, color: Colors.grey.shade700)),
+                  ],
+                ),
+              ),
+              trailing: sel
+                  ? Icon(Icons.check_circle, color: Colors.blue.shade700)
+                  : null,
+              onTap: () => Navigator.pop(ctx, clave),
+            );
+          }
+
+          return SizedBox(
+            height: MediaQuery.sizeOf(ctx).height * 0.72,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Row(
+                    children: [
+                      const Text('Ubicación / servicio',
+                          style: TextStyle(
+                              fontSize: 17, fontWeight: FontWeight.w700)),
+                      const Spacer(),
+                      Text('${ubicaciones.length} servicios',
+                          style: TextStyle(
+                              fontSize: 12, color: Colors.grey.shade600)),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: TextField(
+                    onChanged: (v) => setSheet(() => filtro = v),
+                    style: const TextStyle(fontSize: 14),
+                    decoration: InputDecoration(
+                      hintText: 'Buscar servicio',
+                      prefixIcon: const Icon(Icons.search, size: 20),
+                      isDense: true,
+                      filled: true,
+                      fillColor: Colors.grey.shade100,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
+                    children: [
+                      if (f.isEmpty)
+                        fila('', 'Todas las ubicaciones', total, calTotal,
+                            todas: true),
+                      for (final u in visibles)
+                        fila(u, grupos[u]!.nombre, grupos[u]!.cantidad,
+                            calPorClave[u] ?? 0),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+    if (elegido == null) return; // cerró sin elegir
+    _ubicacionFiltroNotifier.value = elegido.isEmpty ? null : elegido;
   }
 }
 
@@ -1468,6 +1840,13 @@ class _CrearEditarEquipoDialogState extends State<_CrearEditarEquipoDialog> {
       ubicacion,
       inventario,
       observaciones;
+  final FocusNode _ubicacionFocus = FocusNode();
+  // Ubicaciones que ya existen en el inventario, agrupadas por equivalencia
+  // (ver TextUtils.claveUbicacion) — para sugerirlas al escribir y para
+  // guardar con la misma escritura en vez de crear una ubicación "nueva".
+  late final Map<String, ({String nombre, int cantidad})> _ubicaciones =
+      TextUtils.agruparUbicaciones(
+          InventarioData.equipos.map((e) => e['ubicacion']));
   bool _fueraDeServicio = false;
   late final bool _fueraDeServicioInicial;
   String? _fueraDeServicioPor;
@@ -1511,6 +1890,7 @@ class _CrearEditarEquipoDialogState extends State<_CrearEditarEquipoDialog> {
     modelo.dispose();
     serie.dispose();
     ubicacion.dispose();
+    _ubicacionFocus.dispose();
     inventario.dispose();
     observaciones.dispose();
     super.dispose();
@@ -1526,7 +1906,7 @@ class _CrearEditarEquipoDialogState extends State<_CrearEditarEquipoDialog> {
           _buildField(marca, 'Marca'),
           _buildField(modelo, 'Modelo'),
           _buildField(serie, 'Serie'),
-          _buildField(ubicacion, 'Ubicación / Servicio'),
+          _buildUbicacionField(),
           _buildField(inventario, 'Inventario'),
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
@@ -1576,9 +1956,7 @@ class _CrearEditarEquipoDialogState extends State<_CrearEditarEquipoDialog> {
                 dense: true,
                 contentPadding: EdgeInsets.zero,
                 leading: Icon(
-                  h['accion'] == 'montado'
-                      ? Icons.verified
-                      : Icons.remove_done,
+                  h['accion'] == 'montado' ? Icons.verified : Icons.remove_done,
                   size: 18,
                   color: h['accion'] == 'montado'
                       ? Colors.teal
@@ -1605,15 +1983,22 @@ class _CrearEditarEquipoDialogState extends State<_CrearEditarEquipoDialog> {
           onPressed: () {
             if (nombre.text.trim().isEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('El nombre es obligatorio')),
+                const SnackBar(
+                  content: Text('El nombre es obligatorio'),
+                  duration: Duration(seconds: 2),
+                  persist: false,
+                ),
               );
               return;
             }
             if (_fueraDeServicio && observaciones.text.trim().isEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                    content: Text(
-                        'Escribe en Observaciones por qué está fuera de servicio')),
+                  content: Text(
+                      'Escribe en Observaciones por qué está fuera de servicio'),
+                  duration: Duration(seconds: 2),
+                  persist: false,
+                ),
               );
               return;
             }
@@ -1639,7 +2024,7 @@ class _CrearEditarEquipoDialogState extends State<_CrearEditarEquipoDialog> {
               'marca': marca.text,
               'modelo': modelo.text,
               'serie': serie.text,
-              'ubicacion': ubicacion.text,
+              'ubicacion': _ubicacionFinal(),
               'inventario': inventario.text,
               'certificado': widget.equipo?['certificado'] ?? '',
               'fecha': widget.equipo?['fecha'] ?? '',
@@ -1651,6 +2036,63 @@ class _CrearEditarEquipoDialogState extends State<_CrearEditarEquipoDialog> {
           child: const Text('Guardar'),
         ),
       ],
+    );
+  }
+
+  /// La ubicación a guardar: sin espacios sobrantes y, si equivale a una
+  /// que ya existe ("UCI ADULTO " = "UCI ADULTO", "EXPANSION" =
+  /// "EXPANSIÓN"), con la escritura de la existente — así un equipo nuevo
+  /// nunca crea una pestaña/ubicación repetida.
+  String _ubicacionFinal() {
+    final texto = TextUtils.limpiarEspacios(ubicacion.text);
+    return _ubicaciones[TextUtils.claveUbicacion(texto)]?.nombre ?? texto;
+  }
+
+  Widget _buildUbicacionField() {
+    final nombres = _ubicaciones.values.map((g) => g.nombre).toList()..sort();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: RawAutocomplete<String>(
+        textEditingController: ubicacion,
+        focusNode: _ubicacionFocus,
+        optionsBuilder: (valor) {
+          final q = TextUtils.claveUbicacion(valor.text);
+          if (q.isEmpty) return nombres;
+          return nombres.where((n) => TextUtils.claveUbicacion(n).contains(q));
+        },
+        fieldViewBuilder: (_, controller, focusNode, onSubmit) => TextField(
+          controller: controller,
+          focusNode: focusNode,
+          textCapitalization: TextCapitalization.characters,
+          inputFormatters: MayusculasFormatter.lista,
+          decoration: const InputDecoration(
+            labelText: 'Ubicación / Servicio',
+            helperText: 'Elige una existente o escribe una nueva',
+          ),
+          onSubmitted: (_) => onSubmit(),
+        ),
+        optionsViewBuilder: (_, onSelected, opciones) => Align(
+          alignment: Alignment.topLeft,
+          child: Material(
+            elevation: 4,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 220, maxWidth: 280),
+              child: ListView(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                children: [
+                  for (final o in opciones)
+                    ListTile(
+                      dense: true,
+                      title: Text(o),
+                      onTap: () => onSelected(o),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 

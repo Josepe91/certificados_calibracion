@@ -78,7 +78,11 @@ class _BuscarClienteNubePageState extends State<BuscarClienteNubePage> {
       if (mounted) {
         setState(() => _descargando = null);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('No se pudo cargar el cliente: $e')),
+          SnackBar(
+            content: Text('No se pudo cargar el cliente: $e'),
+            duration: const Duration(seconds: 2),
+            persist: false,
+          ),
         );
       }
     }
@@ -139,7 +143,8 @@ class _BuscarClienteNubePageState extends State<BuscarClienteNubePage> {
             )
           else if (_filtrados.isEmpty)
             const Expanded(
-              child: Center(child: Text('Ningún cliente coincide con la búsqueda')),
+              child: Center(
+                  child: Text('Ningún cliente coincide con la búsqueda')),
             )
           else
             Expanded(
