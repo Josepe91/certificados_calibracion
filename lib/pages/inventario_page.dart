@@ -166,7 +166,33 @@ class _InventarioPageState extends State<InventarioPage> {
     final bytes = result.files.single.bytes;
     if (bytes == null) return;
 
-    final excel = Excel.decodeBytes(bytes);
+    Excel excel;
+    try {
+      excel = Excel.decodeBytes(bytes);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('El archivo no es un Excel válido'),
+            duration: Duration(seconds: 2),
+            persist: false,
+          ),
+        );
+      }
+      return;
+    }
+    if (excel.tables.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('El Excel no tiene hojas'),
+            duration: Duration(seconds: 2),
+            persist: false,
+          ),
+        );
+      }
+      return;
+    }
     final sheet = excel.tables.values.first;
 
     // Validación ligera de encabezados: las columnas de datos del equipo

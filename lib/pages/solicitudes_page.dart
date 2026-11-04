@@ -268,6 +268,7 @@ class _SolicitudesPageState extends State<SolicitudesPage> {
     final xlsx = File(CertificadoExcel.rutaCertificado(f.path));
     if (await xlsx.exists()) await xlsx.delete();
 
+    if (!mounted) return;
     setState(() => solicitudes.removeWhere((s) => s.file?.path == f.path));
     SolicitudesStorage.contadorNotifier.value =
         solicitudes.where((s) => s.file != null && !s.enviada).length;
