@@ -35,6 +35,15 @@ class AuthTecnico {
 
   static bool get esAdmin => autorizado && correo == admin;
 
+  /// Cuentas a las que, a pedido de Sebastián (2026-11-04), se les oculta
+  /// toda opción de compartir Excel localmente (Drive/WhatsApp/correo): su
+  /// trabajo debe quedar solo en la nube (ya sube solo al guardar, ver
+  /// SolicitudesSync/ExcelNube) para que Sebastián lo baje y lo comparta él
+  /// mismo al entrar a ese cliente.
+  static const _sinCompartirExcel = {'forero2701@gmail.com'};
+
+  static bool get puedeCompartirExcel => !_sinCompartirExcel.contains(correo);
+
   /// Nombre para firmar acciones (montado, historial): el de la cuenta de
   /// Google, o el correo si la cuenta no tiene nombre.
   static String get nombre {

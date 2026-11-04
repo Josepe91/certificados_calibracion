@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/auth_tecnico.dart';
 import '../data/btmc_storage.dart';
 import '../data/drive_sync.dart';
 import '../data/version_app.dart';
@@ -377,20 +378,25 @@ class _HomePageState extends State<HomePage> {
               ),
 
               // COMPARTIR (Drive, WhatsApp, correo). Los datos ya suben solos
-              // a la nube; los Excel se generan aquí al compartir.
-              _BotonPrincipal(
-                icon: Icons.share,
-                texto: 'Compartir solicitudes',
-                onTap: () => _compartirSolicitudes(context),
-              ),
+              // a la nube; los Excel se generan aquí al compartir. Oculto
+              // para las cuentas sin permiso de compartir Excel localmente
+              // (ver AuthTecnico.puedeCompartirExcel): su trabajo igual
+              // queda en la nube para que Sebastián lo comparta él mismo.
+              if (AuthTecnico.puedeCompartirExcel) ...[
+                _BotonPrincipal(
+                  icon: Icons.share,
+                  texto: 'Compartir solicitudes',
+                  onTap: () => _compartirSolicitudes(context),
+                ),
 
-              const SizedBox(height: 12),
+                const SizedBox(height: 12),
 
-              _BotonPrincipal(
-                icon: Icons.inventory_2,
-                texto: 'Compartir inventario',
-                onTap: () => _exportarInventario(context),
-              ),
+                _BotonPrincipal(
+                  icon: Icons.inventory_2,
+                  texto: 'Compartir inventario',
+                  onTap: () => _exportarInventario(context),
+                ),
+              ],
 
               const Spacer(),
 

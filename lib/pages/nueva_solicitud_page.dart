@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import '../data/auth_tecnico.dart';
 import '../data/certificado_excel.dart';
 import '../data/solicitudes_storage.dart';
 import '../data/solicitudes_sync.dart';
@@ -1048,7 +1049,7 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
                 ],
               ),
               backgroundColor: Colors.green.shade700,
-              action: xlsx == null
+              action: (xlsx == null || !AuthTecnico.puedeCompartirExcel)
                   ? null
                   : SnackBarAction(
                       label: 'COMPARTIR',
