@@ -102,7 +102,11 @@ class _InventarioPageState extends State<InventarioPage> {
     _estadoFiltroNotifier.value = null;
     setState(() {});
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Inventario de $nombreCliente activado'), duration: const Duration(seconds: 2), persist: false,),
+      SnackBar(
+        content: Text('Inventario de $nombreCliente activado'),
+        duration: const Duration(seconds: 2),
+        persist: false,
+      ),
     );
   }
 
@@ -196,8 +200,7 @@ class _InventarioPageState extends State<InventarioPage> {
       for (int i = 0; i < columnas.length; i++) {
         final col = columnas[i];
         final texto = col < encabezado.length
-            ? TextUtils.quitarTildes(
-                    encabezado[col]?.value?.toString() ?? '')
+            ? TextUtils.quitarTildes(encabezado[col]?.value?.toString() ?? '')
                 .toLowerCase()
             : '';
         if (!texto.contains(esperado[i])) {
@@ -254,9 +257,10 @@ class _InventarioPageState extends State<InventarioPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('No se encontró nombre de cliente en el Excel'),
-              duration: Duration(seconds: 2),
-              persist: false,),
+            content: Text('No se encontró nombre de cliente en el Excel'),
+            duration: Duration(seconds: 2),
+            persist: false,
+          ),
         );
       }
       return;
@@ -337,9 +341,10 @@ class _InventarioPageState extends State<InventarioPage> {
     if (InventarioData.clienteActivo == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Primero selecciona o carga un inventario'),
-            duration: Duration(seconds: 2),
-            persist: false,),
+          content: Text('Primero selecciona o carga un inventario'),
+          duration: Duration(seconds: 2),
+          persist: false,
+        ),
       );
       return;
     }
@@ -453,8 +458,8 @@ class _InventarioPageState extends State<InventarioPage> {
   // Para el admin la etiqueta "Por montar"/"Montado" es el botón para
   // marcar/desmarcar (con su confirmación): no ocupa otro ícono en la
   // tarjeta que le quite ancho al nombre del equipo.
-  Widget _badgeMontaje(Map<String, dynamic> e, bool calibrado, bool montado,
-      bool habilitado) {
+  Widget _badgeMontaje(
+      Map<String, dynamic> e, bool calibrado, bool montado, bool habilitado) {
     final badge = _estadoBadge(calibrado, montado: montado);
     if (!calibrado || !AuthTecnico.esAdmin || !habilitado) return badge;
     return InkWell(
@@ -675,16 +680,20 @@ class _InventarioPageState extends State<InventarioPage> {
       _seleccion.value = null;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(uno
-                ? 'Certificado marcado como montado'
-                : '${equipos.length} certificados marcados como montados'),
-            duration: const Duration(seconds: 2),
-            persist: false,));
+          content: Text(uno
+              ? 'Certificado marcado como montado'
+              : '${equipos.length} certificados marcados como montados'),
+          duration: const Duration(seconds: 2),
+          persist: false,
+        ));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('No se pudo marcar: $e'), duration: const Duration(seconds: 2), persist: false,));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('No se pudo marcar: $e'),
+          duration: const Duration(seconds: 2),
+          persist: false,
+        ));
       }
     }
   }
@@ -744,13 +753,19 @@ class _InventarioPageState extends State<InventarioPage> {
     try {
       await MontajesSync.desmarcar(_clienteId, equipo, texto);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Marca de montado quitada'), duration: Duration(seconds: 2), persist: false,));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Marca de montado quitada'),
+          duration: Duration(seconds: 2),
+          persist: false,
+        ));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('No se pudo quitar: $e'), duration: const Duration(seconds: 2), persist: false,));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('No se pudo quitar: $e'),
+          duration: const Duration(seconds: 2),
+          persist: false,
+        ));
       }
     }
   }
@@ -888,9 +903,8 @@ class _InventarioPageState extends State<InventarioPage> {
                       final grupos = TextUtils.agruparUbicaciones(
                           lista.map((e) => e['ubicacion']));
                       final ubicaciones = grupos.keys.toList()
-                        ..sort((a, b) => grupos[a]!
-                            .nombre
-                            .compareTo(grupos[b]!.nombre));
+                        ..sort((a, b) =>
+                            grupos[a]!.nombre.compareTo(grupos[b]!.nombre));
                       final ubicFiltroNombre = ubicFiltro == null
                           ? null
                           : (grupos[ubicFiltro]?.nombre ?? ubicFiltro);
@@ -915,8 +929,7 @@ class _InventarioPageState extends State<InventarioPage> {
                                 !esCal &&
                                 !esBaja) ||
                             (estadoFiltro == 'baja' && esBaja);
-                        final montado =
-                            MontajesSync.estaMontado(e, montajes);
+                        final montado = MontajesSync.estaMontado(e, montajes);
                         final matchMontaje = estadoFiltro != 'calibrado' ||
                             montajeFiltro == null ||
                             (montajeFiltro == 'montado' && montado) ||
@@ -941,8 +954,7 @@ class _InventarioPageState extends State<InventarioPage> {
                         children: [
                           if (ubicaciones.isNotEmpty)
                             Padding(
-                              padding:
-                                  const EdgeInsets.fromLTRB(12, 6, 12, 6),
+                              padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
                               // Lista desplegable con buscador: con muchas
                               // ubicaciones la fila de chips era incómoda.
                               // La key la recrea al cambiar el filtro para
@@ -963,8 +975,7 @@ class _InventarioPageState extends State<InventarioPage> {
                                   dropdownMenuEntries: [
                                     DropdownMenuEntry(
                                         value: '',
-                                        label:
-                                            'Todas (${lista.length})'),
+                                        label: 'Todas (${lista.length})'),
                                     for (final u in ubicaciones)
                                       DropdownMenuEntry(
                                         value: u,
@@ -1017,8 +1028,7 @@ class _InventarioPageState extends State<InventarioPage> {
                           ),
                           if (estadoFiltro == 'calibrado')
                             Padding(
-                              padding:
-                                  const EdgeInsets.fromLTRB(12, 0, 12, 4),
+                              padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
                               child: Row(
                                 children: [
                                   for (final o in const [
@@ -1148,8 +1158,8 @@ class _InventarioPageState extends State<InventarioPage> {
                                   final tieneInv =
                                       e['inventario']?.toString().isNotEmpty ??
                                           false;
-                                  final montaje = montajes[
-                                      InventarioSync.docId(e)];
+                                  final montaje =
+                                      montajes[InventarioSync.docId(e)];
                                   final esMontado =
                                       MontajesSync.estaMontado(e, montajes);
                                   final claveNube = InventarioSync.docId(e);
@@ -1182,27 +1192,28 @@ class _InventarioPageState extends State<InventarioPage> {
                                     child: ListTile(
                                       leading: seleccion != null
                                           ? Checkbox(
-                                              value: seleccion
-                                                  .contains(claveNube),
+                                              value:
+                                                  seleccion.contains(claveNube),
                                               onChanged: seleccionable
                                                   ? (_) => _alternarSeleccion(
                                                       claveNube)
                                                   : null,
                                             )
                                           : CircleAvatar(
-                                        backgroundColor: avatarColor,
-                                        child: Icon(
-                                          esBaja
-                                              ? Icons.block_outlined
-                                              : noPasaCalibracion
-                                                  ? Icons.report_problem
-                                                  : esCalibrado
-                                                      ? Icons.check
-                                                      : Icons.pending_outlined,
-                                          color: Colors.white,
-                                          size: 18,
-                                        ),
-                                      ),
+                                              backgroundColor: avatarColor,
+                                              child: Icon(
+                                                esBaja
+                                                    ? Icons.block_outlined
+                                                    : noPasaCalibracion
+                                                        ? Icons.report_problem
+                                                        : esCalibrado
+                                                            ? Icons.check
+                                                            : Icons
+                                                                .pending_outlined,
+                                                color: Colors.white,
+                                                size: 18,
+                                              ),
+                                            ),
                                       title: Row(
                                         children: [
                                           Expanded(
@@ -1333,15 +1344,13 @@ class _InventarioPageState extends State<InventarioPage> {
                                         ],
                                       ),
                                       isThreeLine: true,
-                                      trailing: index != -1 &&
-                                              seleccion == null
+                                      trailing: index != -1 && seleccion == null
                                           ? Row(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
                                                 if (!esCalibrado && !esBaja)
                                                   IconButton(
-                                                    icon: Icon(
-                                                        Icons.add_task,
+                                                    icon: Icon(Icons.add_task,
                                                         color: Colors
                                                             .blue.shade600),
                                                     tooltip: 'Crear solicitud',
@@ -1355,8 +1364,7 @@ class _InventarioPageState extends State<InventarioPage> {
                                                           Colors.red.shade300),
                                                   tooltip: 'Eliminar equipo',
                                                   onPressed: () =>
-                                                      _eliminarEquipo(
-                                                          e, index),
+                                                      _eliminarEquipo(e, index),
                                                 ),
                                               ],
                                             )
@@ -1395,8 +1403,7 @@ class _InventarioPageState extends State<InventarioPage> {
                 onPressed: sel.isEmpty
                     ? null
                     : () => _confirmarMontar(InventarioData.equipos
-                        .where(
-                            (e) => sel.contains(InventarioSync.docId(e)))
+                        .where((e) => sel.contains(InventarioSync.docId(e)))
                         .toList()),
                 icon: const Icon(Icons.verified),
                 label: Text('Marcar ${sel.length} montados'),
@@ -1606,9 +1613,7 @@ class _CrearEditarEquipoDialogState extends State<_CrearEditarEquipoDialog> {
                 dense: true,
                 contentPadding: EdgeInsets.zero,
                 leading: Icon(
-                  h['accion'] == 'montado'
-                      ? Icons.verified
-                      : Icons.remove_done,
+                  h['accion'] == 'montado' ? Icons.verified : Icons.remove_done,
                   size: 18,
                   color: h['accion'] == 'montado'
                       ? Colors.teal
@@ -1635,17 +1640,22 @@ class _CrearEditarEquipoDialogState extends State<_CrearEditarEquipoDialog> {
           onPressed: () {
             if (nombre.text.trim().isEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('El nombre es obligatorio'), duration: Duration(seconds: 2), persist: false,),
+                const SnackBar(
+                  content: Text('El nombre es obligatorio'),
+                  duration: Duration(seconds: 2),
+                  persist: false,
+                ),
               );
               return;
             }
             if (_fueraDeServicio && observaciones.text.trim().isEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                    content: Text(
-                        'Escribe en Observaciones por qué está fuera de servicio'),
-                    duration: Duration(seconds: 2),
-                    persist: false,),
+                  content: Text(
+                      'Escribe en Observaciones por qué está fuera de servicio'),
+                  duration: Duration(seconds: 2),
+                  persist: false,
+                ),
               );
               return;
             }
@@ -1696,8 +1706,7 @@ class _CrearEditarEquipoDialogState extends State<_CrearEditarEquipoDialog> {
   }
 
   Widget _buildUbicacionField() {
-    final nombres = _ubicaciones.values.map((g) => g.nombre).toList()
-      ..sort();
+    final nombres = _ubicaciones.values.map((g) => g.nombre).toList()..sort();
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: RawAutocomplete<String>(
@@ -1706,8 +1715,7 @@ class _CrearEditarEquipoDialogState extends State<_CrearEditarEquipoDialog> {
         optionsBuilder: (valor) {
           final q = TextUtils.claveUbicacion(valor.text);
           if (q.isEmpty) return nombres;
-          return nombres
-              .where((n) => TextUtils.claveUbicacion(n).contains(q));
+          return nombres.where((n) => TextUtils.claveUbicacion(n).contains(q));
         },
         fieldViewBuilder: (_, controller, focusNode, onSubmit) => TextField(
           controller: controller,
@@ -1725,8 +1733,7 @@ class _CrearEditarEquipoDialogState extends State<_CrearEditarEquipoDialog> {
           child: Material(
             elevation: 4,
             child: ConstrainedBox(
-              constraints:
-                  const BoxConstraints(maxHeight: 220, maxWidth: 280),
+              constraints: const BoxConstraints(maxHeight: 220, maxWidth: 280),
               child: ListView(
                 padding: EdgeInsets.zero,
                 shrinkWrap: true,

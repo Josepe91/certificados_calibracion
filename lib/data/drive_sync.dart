@@ -72,11 +72,12 @@ class DriveSync {
       archivos.add(xlsx ?? f);
       var nombreZip = '';
       try {
-        nombreZip = (jsonDecode(await f.readAsString())['fotos_zip'] ?? '')
-            .toString();
+        nombreZip =
+            (jsonDecode(await f.readAsString())['fotos_zip'] ?? '').toString();
       } catch (_) {}
       if (nombreZip.isEmpty) {
-        nombreZip = p.basename(f.path)
+        nombreZip = p
+            .basename(f.path)
             .replaceAll(RegExp(r'\.json$', caseSensitive: false), '_fotos.zip');
       }
       final zip = File(p.join(f.parent.path, nombreZip));
@@ -125,8 +126,8 @@ class DriveSync {
   static Future<DateTime?> _fechaPlantillas() async {
     try {
       await PlantillasInitializer.inicializar();
-      final marcador = File(
-          p.join(await PlantillasInitializer.rutaLocal, '.build_copiado'));
+      final marcador =
+          File(p.join(await PlantillasInitializer.rutaLocal, '.build_copiado'));
       if (await marcador.exists()) return await marcador.lastModified();
     } catch (_) {}
     return null;
@@ -169,8 +170,8 @@ class DriveSync {
 
         final nombreArchivo = 'INVENTARIO_$nombreCliente.xlsx';
         final tempFile = File(p.join(carpetaTemp.path, nombreArchivo));
-        final montajes = await MontajesSync.cargar(InventarioSync.slug(
-            data['cliente']?['nombre']?.toString() ?? ''));
+        final montajes = await MontajesSync.cargar(
+            InventarioSync.slug(data['cliente']?['nombre']?.toString() ?? ''));
         await tempFile
             .writeAsBytes(InventarioExcel.generar(data, montajes: montajes));
 

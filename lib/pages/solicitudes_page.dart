@@ -145,9 +145,10 @@ class _SolicitudesPageState extends State<SolicitudesPage> {
     if (archivo == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('No se pudo descargar la solicitud de la nube'),
-            duration: Duration(seconds: 2),
-            persist: false,),
+          content: Text('No se pudo descargar la solicitud de la nube'),
+          duration: Duration(seconds: 2),
+          persist: false,
+        ),
       );
       return;
     }
@@ -333,8 +334,7 @@ class _SolicitudesPageState extends State<SolicitudesPage> {
                 child: FilledButton.icon(
                   onPressed: _descargarTodasDeNube,
                   icon: const Icon(Icons.cloud_download),
-                  label: Text(
-                      'Descargar todas las de la nube ($enNubeCount)'),
+                  label: Text('Descargar todas las de la nube ($enNubeCount)'),
                 ),
               ),
             ),

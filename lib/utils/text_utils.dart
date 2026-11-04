@@ -41,11 +41,11 @@ class TextUtils {
         RegExp(r'^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})$').firstMatch(s);
     final serial = double.tryParse(s);
     if (iso != null) {
-      fecha = _fechaValida(int.parse(iso[1]!), int.parse(iso[2]!),
-          int.parse(iso[3]!));
+      fecha = _fechaValida(
+          int.parse(iso[1]!), int.parse(iso[2]!), int.parse(iso[3]!));
     } else if (diaPrimero != null) {
-      fecha = _fechaValida(int.parse(diaPrimero[3]!),
-          int.parse(diaPrimero[2]!), int.parse(diaPrimero[1]!));
+      fecha = _fechaValida(int.parse(diaPrimero[3]!), int.parse(diaPrimero[2]!),
+          int.parse(diaPrimero[1]!));
     } else if (serial != null && serial >= 1 && serial < 100000) {
       // Serial de Excel: días desde 1899-12-30.
       fecha = DateTime.utc(1899, 12, 30).add(Duration(days: serial.floor()));
