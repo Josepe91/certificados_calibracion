@@ -638,6 +638,15 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
     // Lado mayor limitado a 2048 px: una foto de cámara sin límite pesa
     // 3–6 MB y con mala señal en campo no alcanza a subir; así queda en
     // ~300–600 KB y una placa/serial se sigue leyendo con zoom.
+    if (source == ImageSource.gallery) {
+      // De la galería se puede elegir varias de una (no tiene sentido
+      // limitarlo a una sola ahí como en la cámara, que solo captura una).
+      final imagenes = await _picker.pickMultiImage(
+          imageQuality: 85, maxWidth: 2048, maxHeight: 2048);
+      if (imagenes.isEmpty) return;
+      setState(() => fotos.addAll(imagenes.map((i) => File(i.path))));
+      return;
+    }
     final XFile? imagen = await _picker.pickImage(
         source: source, imageQuality: 85, maxWidth: 2048, maxHeight: 2048);
     if (imagen == null) return;
