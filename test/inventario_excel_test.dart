@@ -33,7 +33,7 @@ void main() {
     expect(r1[14]?.value.toString(), 'NEIVA');
     expect(r1[0]?.value.toString(), 'A'); // ordenado por 'orden'
     expect(r1[6]?.value.toString(), 'JS1-26');
-    expect(r1[9]?.value.toString(), 'CALIBRADO');
+    expect(r1[9]?.value.toString(), 'CALIBRADO · POR MONTAR'); // sin montar aún
     expect(r2[9]?.value.toString(), 'FUERA DE SERVICIO (Gabriel)');
     expect(r2[8]?.value.toString(), 'No enciende');
   });
