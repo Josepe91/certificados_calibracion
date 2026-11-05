@@ -273,12 +273,15 @@ calcula mostraría el cliente/equipo de ejemplo de la plantilla) y elimina
 
 **Dónde escribe `CertificadoExcel`:** mediciones en la hoja `MEDIDA`
 (verificado: es la hoja de las `celda_lectura` en todas las plantillas con
-.json); equipo/cliente/certificado/fechas/técnico en `INFORMACIÓN`,
+.json); equipo/cliente/certificado/fechas en `INFORMACIÓN`,
 ubicando las celdas por etiqueta ("Marca", "Solicitante:"...) y no por
 posición fija, porque las plantillas no comparten disposición. Puntos
 vacíos NO se escriben (la celda queda como en la plantilla). Estado
 físico, lugar y temperatura/humedad ambiente no los captura la app: quedan
-los de la plantilla.
+los de la plantilla. "Calibración realiza por" tampoco se escribe
+(Sebastián, 2026-11-05): antes iba `TecnicoProfile` del celular que
+guardaba, y lo guardado desde el celular de la oficina salía firmado por
+quien no calibró; la oficina lo ajusta al montar el certificado.
 
 `test/certificado_excel_test.dart` llena TODAS las plantillas con .json y
 deja el resultado en `build/test_certificados/` para abrirlo en Excel —

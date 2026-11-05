@@ -69,8 +69,7 @@ void main() {
   for (final plantilla in plantillas) {
     test('llena $plantilla', () {
       final bytes = File('assets/plantillas/$plantilla').readAsBytesSync();
-      final out = CertificadoExcel.llenar(bytes, solicitudPara(plantilla),
-          tecnico: 'ING. PRUEBA');
+      final out = CertificadoExcel.llenar(bytes, solicitudPara(plantilla));
       File('${salida.path}/$plantilla').writeAsBytesSync(out);
 
       final x = XlsxPlantilla.desdeBytes(out);
@@ -78,6 +77,19 @@ void main() {
       expect(info.values, contains('CLINICA DE PRUEBA'));
       expect(info.values, contains('JS9999-26'));
       expect(info.values, contains('MARCA X'));
+
+      // "Calibración realiza por" se deja como viene en la plantilla.
+      final original = XlsxPlantilla.desdeBytes(bytes);
+      final infoOriginal = original.textos(original.nombresHojas.first);
+      infoOriginal.forEach((ref, texto) {
+        if (!texto.toLowerCase().contains('realiza')) return;
+        final m = RegExp(r'^([A-Z]+)(\d+)$').firstMatch(ref)!;
+        final fila = m[2]!;
+        for (final r in infoOriginal.keys
+            .where((k) => RegExp('^[A-Z]+$fila\$').hasMatch(k))) {
+          expect(info[r], infoOriginal[r], reason: 'celda $r cambió');
+        }
+      });
     });
   }
 }

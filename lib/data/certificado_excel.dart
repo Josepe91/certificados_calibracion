@@ -6,7 +6,6 @@ import 'package:path/path.dart' as p;
 
 import '../utils/text_utils.dart';
 import 'plantillas_initializer.dart';
-import 'tecnico_profile.dart';
 import 'xlsx_plantilla.dart';
 
 /// Genera el certificado (.xlsx) de una solicitud: copia la plantilla
@@ -18,7 +17,7 @@ import 'xlsx_plantilla.dart';
 ///   trae cada punto del JSON de la solicitud (las mismas `celda_lectura`
 ///   del .json de la plantilla). Un punto vacío NO se escribe: la celda
 ///   queda como está en la plantilla.
-/// - Equipo, cliente, certificado, fechas y técnico → hoja `INFORMACIÓN`,
+/// - Equipo, cliente, certificado y fechas → hoja `INFORMACIÓN`,
 ///   de la que `CERTIFICADO` toma todo por fórmula. Las celdas NO están
 ///   fijas: se ubican buscando las etiquetas ("Marca", "Solicitante:",
 ///   "Fecha de calibración:"…), porque no todas las plantillas tienen la
@@ -46,13 +45,11 @@ class CertificadoExcel {
     }
 
     final bytes = await archivoPlantilla.readAsBytes();
-    final tecnico = await TecnicoProfile.obtenerNombre();
     // Descomprimir/parsear varias hojas XML toma un momento: fuera del
     // hilo de la UI para no congelar el diálogo "Guardando…".
     final resultado = await compute(_llenarEnIsolate, {
       'plantilla': bytes,
       'solicitud': solicitud,
-      'tecnico': tecnico,
     });
 
     final destino = File(rutaCertificado(archivoJson.path));
@@ -67,19 +64,17 @@ class CertificadoExcel {
   static Uint8List _llenarEnIsolate(Map<String, Object> args) => llenar(
         args['plantilla'] as Uint8List,
         args['solicitud'] as Map<String, dynamic>,
-        tecnico: args['tecnico'] as String,
       );
 
   /// Parte pura (sin archivos ni Flutter), para poder probarla directo.
   static Uint8List llenar(
     Uint8List plantilla,
-    Map<String, dynamic> solicitud, {
-    String tecnico = '',
-  }) {
+    Map<String, dynamic> solicitud,
+  ) {
     final x = XlsxPlantilla.desdeBytes(plantilla);
 
     final hojaInfo = _buscarHoja(x, 'informacion') ?? x.nombresHojas.first;
-    _llenarInformacion(x, hojaInfo, solicitud, tecnico);
+    _llenarInformacion(x, hojaInfo, solicitud);
 
     final hojaMedida = _buscarHoja(x, 'medida');
     final mediciones = solicitud['mediciones'];
@@ -119,12 +114,15 @@ class CertificadoExcel {
     'ciudad': 'ciudad',
     'fecha de calibracion': 'fecha_calibracion',
     'fecha de emision': 'fecha_emision',
-    'calibracion realiza por': 'tecnico',
-    'calibracion realizada por': 'tecnico',
+    // "Calibración realiza por" NO se escribe a propósito (Sebastián,
+    // 2026-11-05): antes se ponía el nombre del técnico del celular que
+    // guardó la solicitud, y los certificados guardados desde el celular de
+    // la oficina salían firmados por quien no calibró. Queda el de la
+    // plantilla y la oficina lo ajusta al montar el certificado.
   };
 
-  static void _llenarInformacion(XlsxPlantilla x, String hoja,
-      Map<String, dynamic> solicitud, String tecnico) {
+  static void _llenarInformacion(
+      XlsxPlantilla x, String hoja, Map<String, dynamic> solicitud) {
     final equipo = (solicitud['equipo'] as Map?) ?? const {};
     final cliente = (solicitud['cliente'] as Map?) ?? const {};
     String txt(Object? v) => v?.toString().trim() ?? '';
@@ -148,7 +146,6 @@ class CertificadoExcel {
       'telefono': txt(cliente['telefono']),
       'direccion': txt(cliente['direccion']),
       'ciudad': txt(cliente['ciudad']),
-      'tecnico': tecnico.trim(),
     };
 
     // Etiquetas encontradas, en orden de lectura (fila, columna).
