@@ -151,10 +151,10 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
       if (widget.archivoJson != null) {
         await _cargarSolicitud(widget.archivoJson!);
       } else {
-        if (plantillas.isNotEmpty) {
-          plantillaSeleccionada = plantillas.first;
-          await _cargarConfigPlantilla(plantillas.first);
-        }
+        // Sin plantilla preseleccionada a propósito (Sebastián, 2026-11-05):
+        // antes se ponía plantillas.first y un técnico podía guardar sin
+        // haber escogido la plantilla del equipo. El número de certificado
+        // queda bloqueado hasta que escoja una (ver campo Certificado).
         // Fecha del inventario si la oficina la diligenció en el Excel
         // (p. ej. calibraciones de otro mes); si no, la de hoy.
         final hoy = DateTime.now();
@@ -1440,16 +1440,21 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
               Text('Dirección: ${InventarioData.direccion}'),
               Text('Ciudad: ${InventarioData.ciudad}'),
               const Divider(height: 30),
-              // Campo certificado: error solo tras intento de guardar.
+              // Campo certificado: bloqueado hasta escoger plantilla; error
+              // de vacío solo tras intento de guardar.
               ValueListenableBuilder<String>(
                 valueListenable: _certificadoNotifier,
                 builder: (_, val, __) => TextField(
                   controller: certificadoController,
+                  enabled: plantillaSeleccionada != null,
                   textCapitalization: TextCapitalization.characters,
                   inputFormatters: MayusculasFormatter.lista,
                   decoration: InputDecoration(
                     labelText: 'Certificado *',
                     border: const OutlineInputBorder(),
+                    helperText: plantillaSeleccionada == null
+                        ? 'Primero escoge la plantilla de certificado'
+                        : null,
                     errorText: _intentoGuardar && val.trim().isEmpty
                         ? 'Obligatorio'
                         : null,

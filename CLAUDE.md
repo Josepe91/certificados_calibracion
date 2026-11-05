@@ -231,6 +231,12 @@ step entirely. After a successful save, the page pops back to whichever
 screen pushed it (no more "clear the form and stay" — that only made sense
 when you could pick a *different* equipo without leaving the page).
 
+**Plantilla first (since 2026-11-05):** a new solicitud starts with NO
+plantilla selected (it used to preselect `plantillas.first`, so a technician
+could save without ever choosing the equipo's template). The "Certificado"
+field stays disabled, with a hint, until a plantilla is chosen; `_validar()`
+still blocks saving without one. Don't reintroduce a default plantilla.
+
 **Mediciones are paginated one section at a time** (`_seccionMedicionActual`
 + "Anterior"/"Siguiente sección" in `_buildMediciones`), not one long flat
 scroll of every section's fields. Moving between sections is deliberately
