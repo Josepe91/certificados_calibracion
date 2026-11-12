@@ -55,6 +55,27 @@ class DriveSync {
     // dejó el guardado (si es más nuevo que el JSON y que las plantillas
     // instaladas) y solo se generan los que faltan, varios a la vez.
     final marcadorPlantillas = await _fechaPlantillas();
+    // Copias con el nombre de oficina ("JS11260-26 VENTILADOR MECÁNICO
+    // VG70(U)XZZS33267.xlsx" + "..._fotos.zip"): el archivo interno lleva el
+    // id del equipo ("..._eq_1792433199173796_70"), que en Drive no le
+    // dice nada a la oficina. Se arma una carpeta temporal nueva cada vez.
+    final carpetaCompartir = Directory(
+        p.join((await getTemporaryDirectory()).path, 'btmc_compartir'));
+    if (await carpetaCompartir.exists()) {
+      await carpetaCompartir.delete(recursive: true);
+    }
+    await carpetaCompartir.create(recursive: true);
+    final nombresUsados = <String>{};
+    String nombreUnico(String base) {
+      var nombre = base;
+      var n = 2;
+      while (!nombresUsados.add(nombre.toLowerCase())) {
+        nombre = '$base ($n)';
+        n++;
+      }
+      return nombre;
+    }
+
     final porSolicitud = List<List<File>>.filled(jsons.length, const []);
     var hechos = 0;
     onProgreso?.call(0, jsons.length);
@@ -69,19 +90,43 @@ class DriveSync {
       } catch (e) {
         debugPrint('DriveSync: error generando certificado ${f.path}: $e');
       }
-      archivos.add(xlsx ?? f);
       var nombreZip = '';
+      Map<String, dynamic>? solicitud;
       try {
-        nombreZip =
-            (jsonDecode(await f.readAsString())['fotos_zip'] ?? '').toString();
+        solicitud = jsonDecode(await f.readAsString());
+        nombreZip = (solicitud?['fotos_zip'] ?? '').toString();
       } catch (_) {}
+      var nombreOficina = '';
+      if (xlsx != null && solicitud != null) {
+        nombreOficina = CertificadoExcel.nombreOficina(solicitud);
+      }
+      if (nombreOficina.isNotEmpty) nombreOficina = nombreUnico(nombreOficina);
+      if (xlsx != null && nombreOficina.isNotEmpty) {
+        try {
+          xlsx = await xlsx
+              .copy(p.join(carpetaCompartir.path, '$nombreOficina.xlsx'));
+        } catch (e) {
+          debugPrint('DriveSync: no se pudo renombrar ${xlsx.path}: $e');
+        }
+      }
+      archivos.add(xlsx ?? f);
       if (nombreZip.isEmpty) {
         nombreZip = p
             .basename(f.path)
             .replaceAll(RegExp(r'\.json$', caseSensitive: false), '_fotos.zip');
       }
-      final zip = File(p.join(f.parent.path, nombreZip));
-      if (await zip.exists()) archivos.add(zip);
+      File zip = File(p.join(f.parent.path, nombreZip));
+      if (await zip.exists()) {
+        if (nombreOficina.isNotEmpty) {
+          try {
+            zip = await zip.copy(
+                p.join(carpetaCompartir.path, '${nombreOficina}_fotos.zip'));
+          } catch (e) {
+            debugPrint('DriveSync: no se pudo renombrar ${zip.path}: $e');
+          }
+        }
+        archivos.add(zip);
+      }
       porSolicitud[i] = archivos;
       hechos++;
       onProgreso?.call(hechos, jsons.length);
