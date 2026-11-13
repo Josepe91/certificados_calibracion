@@ -101,12 +101,13 @@ class DriveSync {
         nombreOficina = CertificadoExcel.nombreOficina(solicitud);
       }
       if (nombreOficina.isNotEmpty) nombreOficina = nombreUnico(nombreOficina);
-      if (xlsx != null && nombreOficina.isNotEmpty) {
+      final original = xlsx;
+      if (original != null && nombreOficina.isNotEmpty) {
         try {
-          xlsx = await xlsx
+          xlsx = await original
               .copy(p.join(carpetaCompartir.path, '$nombreOficina.xlsx'));
         } catch (e) {
-          debugPrint('DriveSync: no se pudo renombrar ${xlsx.path}: $e');
+          debugPrint('DriveSync: no se pudo renombrar ${original.path}: $e');
         }
       }
       archivos.add(xlsx ?? f);
