@@ -57,6 +57,29 @@ class CertificadoExcel {
     return destino;
   }
 
+  /// Nombre con el que la oficina archiva el certificado:
+  /// `<CERTIFICADO> <EQUIPO> <SERIE>` (sin serie → inventario), igual que
+  /// el GENERADOR DE PLANTILLAS de la oficina, p. ej.
+  /// "JS11260-26 VENTILADOR MECÁNICO VG70(U)XZZS33267". Se conservan
+  /// tildes y espacios; solo se cambian por "_" los caracteres que Windows
+  /// no acepta en un nombre de archivo. El nombre interno del JSON en el
+  /// celular NO cambia (lleva el id del equipo para evitar colisiones):
+  /// este nombre se usa solo al compartir.
+  static String nombreOficina(Map<String, dynamic> solicitud) {
+    final equipo = (solicitud['equipo'] as Map?) ?? const {};
+    String txt(Object? v) => (v?.toString() ?? '')
+        .replaceAll(RegExp(r'[\\/:*?"<>|\r\n\t]'), '_')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    bool vacio(String s) => s.isEmpty || s.toUpperCase() == 'NO REGISTRA';
+    final serie = txt(equipo['serie']);
+    final inventario = txt(equipo['inventario']);
+    final ident = !vacio(serie) ? serie : (!vacio(inventario) ? inventario : '');
+    return [txt(solicitud['certificado']), txt(equipo['nombre']), ident]
+        .where((s) => s.isNotEmpty)
+        .join(' ');
+  }
+
   /// Ruta del .xlsx que corresponde a una solicitud `.json`.
   static String rutaCertificado(String rutaJson) =>
       rutaJson.replaceAll(RegExp(r'\.json$', caseSensitive: false), '.xlsx');

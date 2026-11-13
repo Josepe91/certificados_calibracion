@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 
+import 'certificado_excel.dart';
 import 'inventario_sync.dart';
 import 'tecnico_profile.dart';
 import 'auth_tecnico.dart';
@@ -13,7 +14,7 @@ import 'auth_tecnico.dart';
 /// a mano por Drive.
 ///
 /// Rutas en Storage:
-/// - `certificados/{clienteId}/{docId}/<CERT> - <EQUIPO> - <SERIE>.xlsx`
+/// - `certificados/{clienteId}/{docId}/<CERT> <EQUIPO> <SERIE>.xlsx` (nombre de oficina)
 ///
 /// La carpeta de cada certificado usa `InventarioSync.docId` (mismo
 /// criterio que las fotos en SolicitudesSync): dos técnicos que certifican
@@ -47,11 +48,9 @@ class ExcelNube {
           '${InventarioSync.slug(cliente)}/'
           '${InventarioSync.docId(equipo)}');
 
-      final nombre = '${_limpiarNombre([
-            solicitud['certificado'],
-            equipo['nombre'],
-            equipo['serie'],
-          ])}.xlsx';
+      // Mismo nombre que usa la oficina: "<CERT> <EQUIPO> <SERIE>"
+      // (sin serie → inventario). Ver CertificadoExcel.nombreOficina.
+      final nombre = '${_limpiarNombre(CertificadoExcel.nombreOficina(solicitud))}.xlsx';
 
       final existentes = await carpeta.listAll();
       for (final item in existentes.items) {
@@ -75,13 +74,10 @@ class ExcelNube {
     }
   }
 
-  /// Nombre de archivo legible ("JS0001-26 - BAÑO MARIA - 12345") sin
-  /// caracteres que Windows o Storage no aceptan.
-  static String _limpiarNombre(List<Object?> partes) => partes
-      .map((v) => (v?.toString() ?? '')
-          .replaceAll(RegExp(r'[\\/:*?"<>|#\[\]\r\n\t]'), '-')
-          .replaceAll(RegExp(r'\s+'), ' ')
-          .trim())
-      .where((s) => s.isNotEmpty)
-      .join(' - ');
+  /// Quita del nombre los caracteres que Storage no maneja bien (# [ ]);
+  /// los que Windows no acepta ya los quita CertificadoExcel.nombreOficina.
+  static String _limpiarNombre(String nombre) => nombre
+      .replaceAll(RegExp(r'[#\[\]]'), '_')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
 }
