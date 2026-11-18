@@ -1,0 +1,17 @@
+{
+  "plantilla": "CENTRÍFUGA 910 RPM.xlsx",
+  "secciones": [
+    {
+      "titulo": "CALIBRACIÓN DE VELOCIDAD",
+      "unidad": "RPM",
+      "puntos": [
+        {
+          "nominal": 910,
+          "celda_nominal": "B5",
+          "celda_lectura": "C5"
+        }
+      ],
+      "info": ""
+    }
+  ]
+}
