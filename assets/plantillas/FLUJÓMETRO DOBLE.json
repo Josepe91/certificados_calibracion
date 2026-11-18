@@ -1,0 +1,77 @@
+{
+  "plantilla": "FLUJÓMETRO DOBLE.xlsx",
+  "secciones": [
+    {
+      "titulo": "CALIBRACIÓN DE FLUJO 1",
+      "unidad": "Lpm",
+      "puntos": [
+        {
+          "nominal": 2,
+          "celda_nominal": "B6",
+          "celda_lectura": "D6",
+          "emp": 0.2
+        },
+        {
+          "nominal": 4,
+          "celda_nominal": "B7",
+          "celda_lectura": "D7",
+          "emp": 0.4
+        },
+        {
+          "nominal": 8,
+          "celda_nominal": "B8",
+          "celda_lectura": "D8",
+          "emp": 0.8
+        },
+        {
+          "nominal": 10,
+          "celda_nominal": "B9",
+          "celda_lectura": "D9",
+          "emp": 1.0
+        },
+        {
+          "nominal": 15,
+          "celda_nominal": "B10",
+          "celda_lectura": "D10",
+          "emp": 1.5
+        }
+      ]
+    },
+    {
+      "titulo": "CALIBRACIÓN DE FLUJO 2",
+      "unidad": "Lpm",
+      "puntos": [
+        {
+          "nominal": 2,
+          "celda_nominal": "B15",
+          "celda_lectura": "D15",
+          "emp": 0.2
+        },
+        {
+          "nominal": 4,
+          "celda_nominal": "B16",
+          "celda_lectura": "D16",
+          "emp": 0.4
+        },
+        {
+          "nominal": 8,
+          "celda_nominal": "B17",
+          "celda_lectura": "D17",
+          "emp": 0.8
+        },
+        {
+          "nominal": 10,
+          "celda_nominal": "B18",
+          "celda_lectura": "D18",
+          "emp": 1.0
+        },
+        {
+          "nominal": 15,
+          "celda_nominal": "B19",
+          "celda_lectura": "D19",
+          "emp": 1.5
+        }
+      ]
+    }
+  ]
+}

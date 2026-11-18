@@ -1,0 +1,27 @@
+{
+  "plantilla": "HUMIDIFICADOR JIKE SH330.xlsx",
+  "secciones": [
+    {
+      "titulo": "TEMPERATURA SONDA",
+      "unidad": "°C",
+      "info": "Lectura del patrón en cada paso. Rangos del fabricante: paso 1: 24 a 27 °C, paso 5: 27 a 30 °C, paso 9: 30 a 34 °C",
+      "puntos": [
+        {
+          "nominal": 25.5,
+          "celda_lectura": "D7",
+          "etiqueta": "Paso 1 (24 a 27 °C)"
+        },
+        {
+          "nominal": 28.5,
+          "celda_lectura": "D8",
+          "etiqueta": "Paso 5 (27 a 30 °C)"
+        },
+        {
+          "nominal": 32,
+          "celda_lectura": "D9",
+          "etiqueta": "Paso 9 (30 a 34 °C)"
+        }
+      ]
+    }
+  ]
+}

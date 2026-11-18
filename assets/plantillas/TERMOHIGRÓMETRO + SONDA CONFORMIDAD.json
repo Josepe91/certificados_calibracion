@@ -1,0 +1,80 @@
+{
+  "plantilla": "TERMOHIGRÓMETRO + SONDA CONFORMIDAD.xlsx",
+  "secciones": [
+    {
+      "titulo": "TEMPERATURA AMBIENTE",
+      "unidad": "°C",
+      "info": "Intervalo de medición: 15 a 30 °C",
+      "puntos": [
+        {
+          "nominal": 15,
+          "celda_nominal": "B4",
+          "celda_lectura": "D4",
+          "celda_lectura_2": "F4"
+        },
+        {
+          "nominal": 22,
+          "celda_nominal": "B5",
+          "celda_lectura": "D5",
+          "celda_lectura_2": "F5"
+        },
+        {
+          "nominal": 30,
+          "celda_nominal": "B6",
+          "celda_lectura": "D6",
+          "celda_lectura_2": "F6"
+        }
+      ]
+    },
+    {
+      "titulo": "TEMPERATURA SONDA",
+      "unidad": "°C",
+      "info": "Intervalo de medición: -24 a 8 °C",
+      "puntos": [
+        {
+          "nominal": -24,
+          "celda_nominal": "B13",
+          "celda_lectura": "D13",
+          "celda_lectura_2": "F13"
+        },
+        {
+          "nominal": -8,
+          "celda_nominal": "B14",
+          "celda_lectura": "D14",
+          "celda_lectura_2": "F14"
+        },
+        {
+          "nominal": 8,
+          "celda_nominal": "B15",
+          "celda_lectura": "D15",
+          "celda_lectura_2": "F15"
+        }
+      ]
+    },
+    {
+      "titulo": "CALIBRACIÓN DE HUMEDAD",
+      "unidad": "%hr",
+      "info": "Intervalo de medición: 50 a 67 %hr",
+      "puntos": [
+        {
+          "nominal": 50,
+          "celda_nominal": "B22",
+          "celda_lectura": "D22",
+          "celda_lectura_2": "F22"
+        },
+        {
+          "nominal": 59,
+          "celda_nominal": "B23",
+          "celda_lectura": "D23",
+          "celda_lectura_2": "F23"
+        },
+        {
+          "nominal": 67,
+          "celda_nominal": "B24",
+          "celda_lectura": "D24",
+          "celda_lectura_2": "F24"
+        }
+      ]
+    }
+  ]
+}

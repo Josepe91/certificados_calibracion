@@ -3,10 +3,14 @@
   "secciones": [
     {
       "titulo": "POTENCIA",
-      "unidad": "µW/cm2",
-      "info": "Intervalo de medición: 13.8 µW/cm2",
+      "unidad": "µW/cm²/nm",
+      "info": "Rango del fabricante: 30 a 40 µW/cm²/nm",
       "puntos": [
-        {"nominal": 13.8, "celda_nominal": "B6", "celda_lectura": "D6"}
+        {
+          "nominal": 35,
+          "celda_nominal": "B6",
+          "celda_lectura": "D6"
+        }
       ]
     }
   ]
