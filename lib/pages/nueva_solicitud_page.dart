@@ -291,6 +291,12 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
     final data = jsonDecode(contenido);
 
     final equipo = Map<String, dynamic>.from(data['equipo']);
+    // La copia del equipo en la solicitud es la de cuando se guardó; lo
+    // vigente es el inventario (ediciones posteriores aquí, en el
+    // inventario o de otro técnico). Se muestra lo vigente.
+    final actual = InventarioData.equipoActual(equipo,
+        nombreCliente: (data['cliente'] as Map?)?['nombre']?.toString() ?? '');
+    if (actual != null) InventarioData.copiarCamposDelEquipo(equipo, actual);
     equipoSeleccionado = equipo;
     _equipoOriginalDeSolicitud = Map<String, dynamic>.from(equipo);
 
@@ -610,6 +616,10 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
       serieController.text = e['serie'] ?? '';
       ubicacionController.text = e['ubicacion'] ?? '';
       inventarioController.text = e['inventario'] ?? '';
+      // Lo escrito en el inventario (p. ej. al crear el equipo) aparece
+      // aquí; antes la solicitud arrancaba con observaciones en blanco y
+      // al guardarla las borraba del inventario.
+      observacionesController.text = e['observaciones']?.toString() ?? '';
     });
   }
 

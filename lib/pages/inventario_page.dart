@@ -454,7 +454,7 @@ class _InventarioPageState extends State<InventarioPage> {
           equipo: equipo, montaje: MontajesSync.de(equipo)),
     );
     if (actualizado != null) {
-      await InventarioData.actualizar(index, actualizado);
+      await InventarioData.actualizar(index, actualizado, referencia: equipo);
     }
   }
 
@@ -2057,8 +2057,8 @@ class _CrearEditarEquipoDialogState extends State<_CrearEditarEquipoDialog> {
               'serie': serie.text,
               'ubicacion': _ubicacionFinal(),
               'inventario': inventario.text,
-              'certificado': widget.equipo?['certificado'] ?? '',
-              'fecha': widget.equipo?['fecha'] ?? '',
+              // Certificado y fecha no se editan aquí: no se devuelven, para
+              // no pisar uno registrado mientras el diálogo estaba abierto.
               'observaciones': observaciones.text,
               'fuera_de_servicio': _fueraDeServicio,
               'fuera_de_servicio_por': fueraDeServicioPorFinal,

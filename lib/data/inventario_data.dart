@@ -5,7 +5,10 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
+import 'certificado_excel.dart';
 import 'inventario_sync.dart';
+import 'solicitudes_storage.dart';
+import 'solicitudes_sync.dart';
 import '../utils/text_utils.dart';
 
 class InventarioData {
@@ -338,6 +341,23 @@ class InventarioData {
   static void _aplicarEquiposRemotos(List<Map<String, dynamic>> remotos) {
     if (cliente.isEmpty) return;
     final copia = remotos.map((e) => Map<String, dynamic>.from(e)).toList();
+    // Equipos que otro técnico (o este celular) cambió: sus solicitudes
+    // locales toman los datos nuevos.
+    final previos = {
+      for (final e in equiposNotifier.value)
+        InventarioSync.docId(e): e,
+    };
+    final cambiados = <Map<String, dynamic>>[];
+    for (final e in copia) {
+      final previo = previos[InventarioSync.docId(e)];
+      if (previo != null &&
+          copiarCamposDelEquipo(Map<String, dynamic>.from(previo), e)) {
+        cambiados.add(e);
+      }
+    }
+    if (cambiados.isNotEmpty) {
+      unawaited(propagarASolicitudes(cambiados, subirANube: false));
+    }
     _asegurarIds(copia); // equipos creados desde un celular sin id
     copia.sort((a, b) {
       final oa = a['orden'] is int ? a['orden'] as int : 0;
@@ -689,14 +709,22 @@ class InventarioData {
   // así cualquier campo futuro que el diálogo no incluya queda preservado.
   // =====================
   static Future<void> actualizar(
-      int index, Map<String, dynamic> actualizado) async {
-    if (index < 0 || index >= equiposNotifier.value.length) return;
+      int index, Map<String, dynamic> actualizado,
+      {Map<String, dynamic>? referencia}) async {
     final copia = List<Map<String, dynamic>>.from(equiposNotifier.value);
+    // La lista puede reordenarse (cambio de otro técnico) mientras el
+    // diálogo está abierto: se busca el equipo de nuevo al guardar.
+    if (referencia != null) {
+      final i = indexPorIdOCascada(copia, referencia);
+      if (i != -1) index = i;
+    }
+    if (index < 0 || index >= copia.length) return;
     copia[index] = {...copia[index], ...actualizado};
     equiposNotifier.value = copia;
     await _guardar();
     unawaited(InventarioSync.upsertEquipo(
         InventarioSync.slug(cliente), copia[index]));
+    unawaited(propagarASolicitudes([copia[index]], subirANube: true));
   }
 
   // =====================
@@ -754,7 +782,21 @@ class InventarioData {
 
     copia[index] = {
       ...copia[index], // preservar campos existentes (fuera_de_servicio, etc.)
-      ...equipoFinal, // aplicar cambios del formulario
+      // Solo los datos que el formulario de la solicitud edita: el resto de
+      // equipoFinal es la copia del equipo tomada al abrir la solicitud
+      // (orden, id, fuera de servicio...) y pisaría cambios más nuevos.
+      for (final campo in const [
+        'nombre',
+        'marca',
+        'modelo',
+        'serie',
+        'ubicacion',
+        'inventario',
+        'no_pasa_calibracion',
+        'no_pasa_calibracion_detalle',
+        'no_pasa_calibracion_por',
+      ])
+        if (equipoFinal.containsKey(campo)) campo: equipoFinal[campo],
       'certificado': certificado,
       'fecha': fecha,
       'observaciones': observaciones,
@@ -764,7 +806,142 @@ class InventarioData {
     await _guardar();
     unawaited(InventarioSync.upsertEquipo(
         InventarioSync.slug(cliente), copia[index]));
+    // Otras solicitudes del mismo equipo (p. ej. una enviada antes) quedan
+    // con estos datos también.
+    unawaited(propagarASolicitudes([copia[index]], subirANube: true));
     return true;
+  }
+
+  // =====================
+  // DATOS DEL EQUIPO TRANSVERSALES (inventario ⇄ solicitudes)
+  //
+  // El equipo se edita en tres lugares: el diálogo del inventario, al
+  // crear una solicitud y al modificar una solicitud. El inventario es la
+  // copia vigente (la última edición, venga de donde venga, y la de otros
+  // técnicos por la nube); cada solicitud guarda en su JSON una COPIA del
+  // equipo que antes quedaba congelada el día que se guardó. Ahora:
+  //   - al abrir una solicitud se toman los datos actuales del inventario
+  //     ([equipoActual]);
+  //   - cada cambio del equipo en el inventario (propio o remoto) se
+  //     copia a las solicitudes de ese equipo ([propagarASolicitudes]).
+  // =====================
+
+  /// Datos del equipo que viven en el inventario y se reflejan en las
+  /// solicitudes. El certificado y la fecha NO: cada solicitud tiene el
+  /// suyo.
+  static const List<String> camposDelEquipo = [
+    'nombre',
+    'marca',
+    'modelo',
+    'serie',
+    'ubicacion',
+    'inventario',
+    'observaciones',
+    'fuera_de_servicio',
+    'fuera_de_servicio_por',
+  ];
+
+  /// Versión vigente en el inventario del equipo [referencia] (copia del
+  /// equipo guardada en una solicitud), o null si su cliente no es el
+  /// activo o el equipo no está.
+  static Map<String, dynamic>? equipoActual(
+    Map<String, dynamic> referencia, {
+    required String nombreCliente,
+  }) {
+    if (cliente.isEmpty ||
+        InventarioSync.slug(nombreCliente) != InventarioSync.slug(cliente)) {
+      return null;
+    }
+    final lista = equiposNotifier.value;
+    final i = indexPorIdOCascada(lista, referencia);
+    return i == -1 ? null : Map<String, dynamic>.from(lista[i]);
+  }
+
+  /// [destino] con los [camposDelEquipo] de [fuente]. Devuelve si cambió.
+  static bool copiarCamposDelEquipo(
+      Map<String, dynamic> destino, Map<String, dynamic> fuente) {
+    bool cambio = false;
+    for (final campo in camposDelEquipo) {
+      if (!fuente.containsKey(campo)) continue;
+      final nuevo = fuente[campo];
+      if ((destino[campo]?.toString() ?? '') != (nuevo?.toString() ?? '')) {
+        destino[campo] = nuevo;
+        cambio = true;
+      }
+    }
+    return cambio;
+  }
+
+  static bool _mismaClave(Map<String, dynamic> a, Map<String, dynamic> b) {
+    final ca = a['clave_nube']?.toString() ?? '';
+    final cb = b['clave_nube']?.toString() ?? '';
+    if (ca.isNotEmpty && cb.isNotEmpty) return ca == cb;
+    final ia = a['id']?.toString() ?? '';
+    final ib = b['id']?.toString() ?? '';
+    return ia.isNotEmpty && ia == ib;
+  }
+
+  static Future<void> _colaPropagar = Future.value();
+
+  /// Copia los datos de [equipos] (ya actualizados en el inventario) a
+  /// las solicitudes guardadas en este celular (pendientes y enviadas) de
+  /// esos mismos equipos y regenera su certificado .xlsx. Con
+  /// [subirANube] (solo el celular donde se hizo la edición) también
+  /// actualiza el equipo de esas solicitudes en la nube, para que los
+  /// demás técnicos las vean igual. Nunca lanza.
+  static Future<void> propagarASolicitudes(
+    List<Map<String, dynamic>> equipos, {
+    required bool subirANube,
+  }) {
+    if (equipos.isEmpty || cliente.isEmpty) return Future.value();
+    final clienteId = InventarioSync.slug(cliente);
+    final copias = [for (final e in equipos) Map<String, dynamic>.from(e)];
+    final tarea = _colaPropagar.then((_) async {
+      try {
+        final archivos = <File>[
+          ...await SolicitudesStorage.listarPendientes(),
+          ...(await SolicitudesStorage.enviadasDir())
+              .listSync()
+              .whereType<File>()
+              .where((f) => f.path.toLowerCase().endsWith('.json')),
+        ];
+        for (final f in archivos) {
+          try {
+            final Map<String, dynamic> data =
+                jsonDecode(await f.readAsString());
+            final nombreCli =
+                (data['cliente'] as Map?)?['nombre']?.toString() ?? '';
+            if (InventarioSync.slug(nombreCli) != clienteId) continue;
+            final equipo =
+                Map<String, dynamic>.from((data['equipo'] as Map?) ?? {});
+            Map<String, dynamic>? fuente;
+            for (final e in copias) {
+              if (_mismaClave(e, equipo)) fuente = e;
+            }
+            if (fuente == null) continue;
+            if (!copiarCamposDelEquipo(equipo, fuente)) continue;
+            data['equipo'] = equipo;
+            await f.writeAsString(
+                const JsonEncoder.withIndent('  ').convert(data));
+            try {
+              await CertificadoExcel.generarDesdeSolicitud(f);
+            } catch (e) {
+              debugPrint('InventarioData.propagar: xlsx ${f.path}: $e');
+            }
+            if (subirANube) {
+              unawaited(SolicitudesSync.actualizarEquipoEnNube(
+                  clienteId, InventarioSync.docId(equipo), equipo));
+            }
+          } catch (e) {
+            debugPrint('InventarioData.propagar: ${f.path}: $e');
+          }
+        }
+      } catch (e) {
+        debugPrint('InventarioData.propagarASolicitudes: $e');
+      }
+    });
+    _colaPropagar = tarea;
+    return tarea;
   }
 
   // =====================
