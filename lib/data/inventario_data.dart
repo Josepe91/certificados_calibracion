@@ -164,21 +164,70 @@ class InventarioData {
       if (porId != -1) return porId;
     }
 
-    final serie = referencia['serie']?.toString().trim() ?? '';
-    final inventario = referencia['inventario']?.toString().trim() ?? '';
-    final nombre = referencia['nombre']?.toString().trim() ?? '';
-    final ubicacion = referencia['ubicacion']?.toString().trim() ?? '';
+    // Dato viejo sin clave ni id: se busca por contenido, pero solo se
+    // acepta un resultado ÚNICO. Una serie/inventario de relleno ("NO
+    // REGISTRA") o repetida ya no cae en el primer equipo que la tenga:
+    // si hay varios candidatos, se prueba con una combinación más
+    // específica y, si sigue ambiguo, no se toca ningún equipo (-1).
+    for (final campos in const [
+      ['serie', 'inventario', 'nombre'],
+      ['serie', 'nombre'],
+      ['inventario', 'nombre'],
+      ['serie', 'inventario'],
+      ['serie'],
+      ['inventario'],
+      ['nombre', 'ubicacion'],
+    ]) {
+      final claveRef = _claveCampos(referencia, campos);
+      if (claveRef == null) continue;
+      int encontrado = -1;
+      int cuantos = 0;
+      for (int i = 0; i < lista.length; i++) {
+        if (_claveCampos(lista[i], campos) == claveRef) {
+          encontrado = i;
+          cuantos++;
+        }
+      }
+      if (cuantos == 1) return encontrado;
+    }
+    return -1;
+  }
 
-    return lista.indexWhere((e) {
-      if (serie.isNotEmpty) {
-        return e['serie']?.toString().trim() == serie;
-      }
-      if (inventario.isNotEmpty) {
-        return e['inventario']?.toString().trim() == inventario;
-      }
-      return e['nombre']?.toString().trim() == nombre &&
-          e['ubicacion']?.toString().trim() == ubicacion;
-    });
+  // Textos que los clientes ponen en serie/inventario cuando el equipo no
+  // tiene uno: no identifican a ningún equipo.
+  static const Set<String> _textosDeRelleno = {
+    'NO REGISTRA', 'NOREGISTRA', 'NO REGISTRADO', 'NR', 'N/R', 'NA', 'N/A',
+    'NO APLICA', 'S/N', 'SN', 'S/S', 'SIN SERIE', 'SIN SERIAL', 'SIN NUMERO',
+    'SIN INVENTARIO', 'SIN CODIGO', 'SIN PLACA', 'NO TIENE', 'NO', 'NINGUNO',
+    'ND', 'N/D', 'NO DISPONIBLE', 'X', 'XX', 'XXX',
+  };
+
+  /// Valor normalizado de un campo para emparejar equipos: mayúsculas, sin
+  /// tildes ni espacios sobrantes. En serie/inventario, un texto de relleno
+  /// ("NO REGISTRA", "N/A", "S/N", "0", "-") cuenta como vacío.
+  static String valorParaEmparejar(Map<String, dynamic> e, String campo) {
+    final s = TextUtils.quitarTildes(
+            (e[campo]?.toString() ?? '').trim().toUpperCase())
+        .replaceAll(RegExp(r'\s+'), ' ');
+    if (campo != 'serie' && campo != 'inventario') return s;
+    if (RegExp(r'^[\s\-_/\.0]*$').hasMatch(s)) return '';
+    final sinPuntos = s.replaceAll('.', '').trim();
+    if (_textosDeRelleno.contains(s) || _textosDeRelleno.contains(sinPuntos)) {
+      return '';
+    }
+    return s;
+  }
+
+  /// Clave con los [campos] del equipo, o null si alguno está vacío (o es
+  /// relleno): una clave incompleta no sirve para identificar un equipo.
+  static String? _claveCampos(Map<String, dynamic> e, List<String> campos) {
+    final partes = <String>[];
+    for (final c in campos) {
+      final v = valorParaEmparejar(e, c);
+      if (v.isEmpty) return null;
+      partes.add(v);
+    }
+    return partes.join('\u0001');
   }
 
   // =====================
@@ -409,28 +458,140 @@ class InventarioData {
     ));
   }
 
-  /// Clave natural para emparejar un equipo del Excel nuevo con uno ya
-  /// conocido: serie, si no inventario, si no nombre+ubicación.
-  static String _claveEmparejar(Map<String, dynamic> e) {
-    String t(String campo) => e[campo]?.toString().trim() ?? '';
-    if (t('serie').isNotEmpty) return 's:${t('serie')}';
-    if (t('inventario').isNotEmpty) return 'i:${t('inventario')}';
-    return 'n:${t('nombre')}:${t('ubicacion')}';
+  /// Empareja cada fila del Excel nuevo con, a lo sumo, un equipo ya
+  /// conocido. Devuelve, por fila nueva, el índice en [existentes] o null.
+  ///
+  /// La serie sola NO basta: los clientes repiten series (flujómetros,
+  /// reguladores) y usan "NO REGISTRA" en serie o inventario. Antes todo
+  /// equipo con la misma serie caía en un solo grupo y se emparejaba por
+  /// orden de aparición, así que al cambiar el orden o un dato del Excel
+  /// el certificado de un equipo quedaba en otro. Ahora se empareja por
+  /// pasadas, de la más segura a la más floja:
+  ///   1. Mismo número de certificado (lo más confiable), si es único y
+  ///      la serie/inventario no lo contradicen.
+  ///   2. Combinaciones de serie/inventario/nombre/marca/modelo/ubicación,
+  ///      de la más completa a la más corta. Los rellenos cuentan como
+  ///      vacíos y una combinación con un campo vacío no se usa.
+  ///   3. Serie sola o inventario solo, SOLO si es único en ambos lados.
+  /// Lo que queda sin pareja se toma como equipo nuevo (no se adivina).
+  static List<int?> emparejar(
+    List<Map<String, dynamic>> nuevos,
+    List<Map<String, dynamic>> existentes,
+  ) {
+    final pareja = List<int?>.filled(nuevos.length, null);
+    final usados = <int>{};
+
+    // Serie o inventario reales distintos = equipos distintos, aunque
+    // compartan otro dato (p. ej. un certificado que quedó cruzado).
+    bool compatibles(Map<String, dynamic> a, Map<String, dynamic> b) {
+      for (final c in const ['serie', 'inventario']) {
+        final va = valorParaEmparejar(a, c);
+        final vb = valorParaEmparejar(b, c);
+        if (va.isNotEmpty && vb.isNotEmpty && va != vb) return false;
+      }
+      return true;
+    }
+
+    void pasada(List<String> campos, {required bool unico}) {
+      final Map<String, List<int>> porClaveNuevos = {};
+      final Map<String, List<int>> porClaveExist = {};
+      for (int i = 0; i < nuevos.length; i++) {
+        if (pareja[i] != null) continue;
+        final k = _claveCampos(nuevos[i], campos);
+        if (k != null) (porClaveNuevos[k] ??= []).add(i);
+      }
+      for (int j = 0; j < existentes.length; j++) {
+        if (usados.contains(j)) continue;
+        final k = _claveCampos(existentes[j], campos);
+        if (k != null) (porClaveExist[k] ??= []).add(j);
+      }
+      porClaveNuevos.forEach((k, filas) {
+        final cand = porClaveExist[k];
+        if (cand == null) return;
+        if (unico && (filas.length != 1 || cand.length != 1)) return;
+        if (unico && !compatibles(nuevos[filas[0]], existentes[cand[0]])) {
+          return;
+        }
+        // Con la combinación completa, los repetidos son indistinguibles
+        // (mismo nombre, marca, modelo, serie, inventario y ubicación):
+        // da igual cuál con cuál, se emparejan en orden.
+        for (int n = 0; n < filas.length && n < cand.length; n++) {
+          pareja[filas[n]] = cand[n];
+          usados.add(cand[n]);
+        }
+      });
+    }
+
+    pasada(['certificado'], unico: true);
+    const todos = [
+      'nombre',
+      'marca',
+      'modelo',
+      'serie',
+      'inventario',
+      'ubicacion',
+    ];
+    pasada(todos, unico: false);
+    // Equipos sin serie ni inventario: misma descripción y ubicación, en
+    // orden (son indistinguibles por sus datos).
+    {
+      final sinIdNuevos = [
+        for (int i = 0; i < nuevos.length; i++)
+          if (pareja[i] == null &&
+              valorParaEmparejar(nuevos[i], 'serie').isEmpty &&
+              valorParaEmparejar(nuevos[i], 'inventario').isEmpty)
+            i
+      ];
+      final Map<String, List<int>> exist = {};
+      for (int j = 0; j < existentes.length; j++) {
+        if (usados.contains(j)) continue;
+        if (valorParaEmparejar(existentes[j], 'serie').isNotEmpty ||
+            valorParaEmparejar(existentes[j], 'inventario').isNotEmpty) {
+          continue;
+        }
+        final k = _claveCampos(existentes[j], const ['nombre', 'ubicacion']);
+        if (k == null) continue;
+        final k2 = '$k\u0001${valorParaEmparejar(existentes[j], 'marca')}'
+            '\u0001${valorParaEmparejar(existentes[j], 'modelo')}';
+        (exist[k2] ??= []).add(j);
+      }
+      for (final i in sinIdNuevos) {
+        final k = _claveCampos(nuevos[i], const ['nombre', 'ubicacion']);
+        if (k == null) continue;
+        final k2 = '$k\u0001${valorParaEmparejar(nuevos[i], 'marca')}'
+            '\u0001${valorParaEmparejar(nuevos[i], 'modelo')}';
+        final cand = exist[k2];
+        if (cand == null || cand.isEmpty) continue;
+        final j = cand.removeAt(0);
+        pareja[i] = j;
+        usados.add(j);
+      }
+    }
+    pasada(['serie', 'inventario', 'nombre'], unico: false);
+    pasada(['serie', 'inventario'], unico: false);
+    pasada(['serie', 'nombre', 'ubicacion'], unico: true);
+    pasada(['inventario', 'nombre', 'ubicacion'], unico: true);
+    pasada(['serie', 'nombre'], unico: true);
+    pasada(['inventario', 'nombre'], unico: true);
+    pasada(['serie'], unico: true);
+    pasada(['inventario'], unico: true);
+    return pareja;
   }
 
   /// Aplica sobre los equipos de un Excel recién importado lo que la app
   /// ya sabía de ellos (id, clave_nube, certificado, fecha, observaciones,
   /// fuera de servicio, no pasa calibración — campos que el Excel no trae
   /// o que el técnico registró en la app) y fija `orden` y `clave_nube`.
-  ///
-  /// Varios equipos pueden compartir serie/inventario de relleno ("NO
-  /// REGISTRA"), así que el N-ésimo repetido del Excel nuevo se empareja
-  /// con el N-ésimo repetido de los existentes, en vez de colapsar todos
-  /// sobre uno (eso cruzaba certificados entre equipos distintos).
+  /// El emparejamiento está en [emparejar].
   ///
   /// `clave_nube` se hereda del existente emparejado: una fila insertada o
   /// borrada en el Excel ya no cambia el documento de nube de los demás
   /// equipos. Solo los equipos sin pareja reciben una clave nueva.
+  ///
+  /// Certificado: manda el del Excel. Si la fila no trae, se hereda el de
+  /// la app SOLO si ese número no aparece en otra fila del Excel; si
+  /// aparece, era un certificado cruzado y se marca `limpiar_certificado`
+  /// para borrarlo también de la nube.
   static List<Map<String, dynamic>> fusionarConExistentes(
     List<Map<String, dynamic>> nuevos,
     List<Map<String, dynamic>> existentes,
@@ -442,21 +603,18 @@ class InventarioData {
       'no_pasa_calibracion_por',
     ];
 
-    final Map<String, List<Map<String, dynamic>>> porClave = {};
-    for (final e in existentes) {
-      (porClave[_claveEmparejar(e)] ??= []).add(e);
-    }
+    final certsExcel = <String>{
+      for (final e in nuevos)
+        if (valorParaEmparejar(e, 'certificado').isNotEmpty)
+          valorParaEmparejar(e, 'certificado'),
+    };
+    final pareja = emparejar(nuevos, existentes);
 
-    final Map<String, int> ocurrencia = {};
     final resultado = <Map<String, dynamic>>[];
     for (int i = 0; i < nuevos.length; i++) {
       final e = <String, dynamic>{...nuevos[i], 'orden': i};
-      final clave = _claveEmparejar(e);
-      final n = ocurrencia[clave] = (ocurrencia[clave] ?? 0) + 1;
-      final candidatos = porClave[clave];
-      final previo = (candidatos != null && n <= candidatos.length)
-          ? candidatos[n - 1]
-          : null;
+      e.remove('limpiar_certificado');
+      final previo = pareja[i] == null ? null : existentes[pareja[i]!];
 
       if (previo != null) {
         String v(String campo) => previo[campo]?.toString().trim() ?? '';
@@ -465,10 +623,16 @@ class InventarioData {
         // clave_nube: el que se calculaba con su contenido y orden de
         // entonces).
         e['clave_nube'] = InventarioSync.docId(previo);
-        // Certificado/fecha: el del Excel si lo trae, si no el de la app.
-        if ((e['certificado']?.toString().trim() ?? '').isEmpty) {
-          if (v('certificado').isNotEmpty) e['certificado'] = v('certificado');
-          if (v('fecha').isNotEmpty) e['fecha'] = v('fecha');
+        if ((e['certificado']?.toString().trim() ?? '').isEmpty &&
+            v('certificado').isNotEmpty) {
+          if (certsExcel.contains(valorParaEmparejar(previo, 'certificado'))) {
+            e['certificado'] = '';
+            e['fecha'] = '';
+            e['limpiar_certificado'] = true;
+          } else {
+            e['certificado'] = v('certificado');
+            if (v('fecha').isNotEmpty) e['fecha'] = v('fecha');
+          }
         }
         for (final campo in textosDeLaApp) {
           if (v(campo).isNotEmpty) e[campo] = v(campo);

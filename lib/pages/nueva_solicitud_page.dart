@@ -770,15 +770,22 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
     final idB = b['id']?.toString() ?? '';
     if (idA.isNotEmpty && idB.isNotEmpty) return idA == idB;
 
-    // Datos sin id (inventario viejo aún no migrado): cascada por contenido.
-    final serieA = a['serie']?.toString().trim() ?? '';
-    final serieB = b['serie']?.toString().trim() ?? '';
-    if (serieA.isNotEmpty && serieB.isNotEmpty) return serieA == serieB;
-    final invA = a['inventario']?.toString().trim() ?? '';
-    final invB = b['inventario']?.toString().trim() ?? '';
-    if (invA.isNotEmpty && invB.isNotEmpty) return invA == invB;
-    return a['nombre']?.toString().trim() == b['nombre']?.toString().trim() &&
-        a['ubicacion']?.toString().trim() == b['ubicacion']?.toString().trim();
+    // Datos sin id (inventario viejo aún no migrado): por contenido, con
+    // serie/inventario de relleno ("NO REGISTRA") tratados como vacíos y
+    // sin decidir solo por una serie repetida: tienen que coincidir todos
+    // los datos que ambos traen.
+    String v(Map<String, dynamic> e, String c) =>
+        InventarioData.valorParaEmparejar(e, c);
+    bool algunId = false;
+    for (final c in const ['serie', 'inventario']) {
+      if (v(a, c).isNotEmpty && v(b, c).isNotEmpty) {
+        if (v(a, c) != v(b, c)) return false;
+        algunId = true;
+      }
+    }
+    if (v(a, 'nombre') != v(b, 'nombre')) return false;
+    if (!algunId && v(a, 'ubicacion') != v(b, 'ubicacion')) return false;
+    return true;
   }
 
   Future<String?> _buscarCertificadoDuplicado(String cert) async {
