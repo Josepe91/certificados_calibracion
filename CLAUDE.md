@@ -68,6 +68,40 @@ document.
   merge so a blank reimport can never blow away a calibration another
   technician already recorded.
 
+**Emparejar al reimportar (`InventarioData.emparejar`, desde 2026-11-25):**
+la serie sola NO identifica un equipo — los clientes repiten series
+(flujómetros, reguladores) y ponen "NO REGISTRA"/"N/A"/"S/N" en serie o
+inventario (`valorParaEmparejar` los trata como vacíos). Antes se agrupaba
+solo por serie y se emparejaba por orden de aparición: con el inventario
+corregido de La Magdalena eso cruzaba 17 certificados. Ahora va por pasadas:
+certificado único (si serie/inventario no lo contradicen) → combinación
+completa → combinaciones más cortas → serie o inventario solos SOLO si son
+únicos. Sin pareja = equipo nuevo (no se adivina). Si una fila sin
+certificado empareja con un equipo cuyo certificado está en OTRA fila del
+Excel, se marca `limpiar_certificado` y `_soloEstructura` sí lo borra en la
+nube; `_borrarCopiasCruzadas` borra los documentos sobrantes cuyo
+certificado ya está en otra fila (nunca los que tienen uno que el Excel no
+trae). `indexPorIdOCascada`/`_mismoEquipo` sin clave ni id solo aceptan un
+resultado único.
+
+**Equipo transversal (desde 2026-11-25):** el equipo se edita en el
+diálogo del inventario, al crear y al modificar una solicitud; la copia
+vigente es SIEMPRE el inventario. `NuevaSolicitudPage._seleccionarEquipo`
+carga también `observaciones`; `_cargarSolicitud` superpone
+`InventarioData.equipoActual` sobre la copia del JSON (que es la del día
+que se guardó). `actualizarEquipo` solo aplica los campos que edita el
+formulario (no toda la copia: pisaba orden/fuera de servicio más nuevos).
+Cada cambio del equipo — `actualizar` (diálogo, re-ubica por `referencia`
+al guardar), `actualizarEquipo` y los remotos de `_aplicarEquiposRemotos` —
+llama a `propagarASolicitudes`: reescribe `equipo` en los JSON de
+pendientes/ y enviadas/ con `camposDelEquipo` (nunca certificado/fecha),
+regenera el .xlsx y, solo en el celular que editó, actualiza el equipo de la
+solicitud en Firestore (`SolicitudesSync.actualizarEquipoEnNube`, `update`
+sin fotos). El diálogo del inventario ya no devuelve certificado/fecha.
+
+**CI:** `.github/workflows/pruebas.yml` corre `flutter analyze` y
+`flutter test` en cada PR.
+
 **`fuera_de_servicio_por`:** set automatically from `TecnicoProfile.obtenerNombre()`
 (the device's own signed-in technician name, see `lib/data/tecnico_profile.dart`)
 when a technician flips "Fuera de servicio" on — never a manually-typed/picked

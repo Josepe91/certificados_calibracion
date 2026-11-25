@@ -183,6 +183,28 @@ class SolicitudesSync {
     }
   }
 
+  /// Actualiza solo los datos del equipo de una solicitud que ya está en
+  /// la nube (cuando el equipo se editó en el inventario), sin volver a
+  /// subir fotos ni Excel. Si la solicitud aún no está en la nube no hace
+  /// nada: `update` falla y su subida pendiente ya lleva los datos nuevos.
+  static Future<void> actualizarEquipoEnNube(
+    String clienteId,
+    String clave,
+    Map<String, dynamic> equipo,
+  ) async {
+    try {
+      await _asegurarSesion();
+      final limpio = Map<String, dynamic>.from(equipo)
+        ..removeWhere((k, v) => v == null);
+      await _solicitudesRef(clienteId).doc(clave).update({
+        'equipo': limpio,
+        'actualizado_en': FieldValue.serverTimestamp(),
+      }).timeout(const Duration(seconds: 20), onTimeout: () {});
+    } catch (e) {
+      debugPrint('SolicitudesSync.actualizarEquipoEnNube $clave: $e');
+    }
+  }
+
   static Future<List<File>> _fotosDelZip(
       File archivoJson, Map<String, dynamic> solicitud) async {
     final nombreZip = solicitud['fotos_zip']?.toString() ?? '';

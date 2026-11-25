@@ -291,6 +291,12 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
     final data = jsonDecode(contenido);
 
     final equipo = Map<String, dynamic>.from(data['equipo']);
+    // La copia del equipo en la solicitud es la de cuando se guardó; lo
+    // vigente es el inventario (ediciones posteriores aquí, en el
+    // inventario o de otro técnico). Se muestra lo vigente.
+    final actual = InventarioData.equipoActual(equipo,
+        nombreCliente: (data['cliente'] as Map?)?['nombre']?.toString() ?? '');
+    if (actual != null) InventarioData.copiarCamposDelEquipo(equipo, actual);
     equipoSeleccionado = equipo;
     _equipoOriginalDeSolicitud = Map<String, dynamic>.from(equipo);
 
@@ -610,6 +616,10 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
       serieController.text = e['serie'] ?? '';
       ubicacionController.text = e['ubicacion'] ?? '';
       inventarioController.text = e['inventario'] ?? '';
+      // Lo escrito en el inventario (p. ej. al crear el equipo) aparece
+      // aquí; antes la solicitud arrancaba con observaciones en blanco y
+      // al guardarla las borraba del inventario.
+      observacionesController.text = e['observaciones']?.toString() ?? '';
     });
   }
 
@@ -770,15 +780,22 @@ class _NuevaSolicitudPageState extends State<NuevaSolicitudPage> {
     final idB = b['id']?.toString() ?? '';
     if (idA.isNotEmpty && idB.isNotEmpty) return idA == idB;
 
-    // Datos sin id (inventario viejo aún no migrado): cascada por contenido.
-    final serieA = a['serie']?.toString().trim() ?? '';
-    final serieB = b['serie']?.toString().trim() ?? '';
-    if (serieA.isNotEmpty && serieB.isNotEmpty) return serieA == serieB;
-    final invA = a['inventario']?.toString().trim() ?? '';
-    final invB = b['inventario']?.toString().trim() ?? '';
-    if (invA.isNotEmpty && invB.isNotEmpty) return invA == invB;
-    return a['nombre']?.toString().trim() == b['nombre']?.toString().trim() &&
-        a['ubicacion']?.toString().trim() == b['ubicacion']?.toString().trim();
+    // Datos sin id (inventario viejo aún no migrado): por contenido, con
+    // serie/inventario de relleno ("NO REGISTRA") tratados como vacíos y
+    // sin decidir solo por una serie repetida: tienen que coincidir todos
+    // los datos que ambos traen.
+    String v(Map<String, dynamic> e, String c) =>
+        InventarioData.valorParaEmparejar(e, c);
+    bool algunId = false;
+    for (final c in const ['serie', 'inventario']) {
+      if (v(a, c).isNotEmpty && v(b, c).isNotEmpty) {
+        if (v(a, c) != v(b, c)) return false;
+        algunId = true;
+      }
+    }
+    if (v(a, 'nombre') != v(b, 'nombre')) return false;
+    if (!algunId && v(a, 'ubicacion') != v(b, 'ubicacion')) return false;
+    return true;
   }
 
   Future<String?> _buscarCertificadoDuplicado(String cert) async {

@@ -5,7 +5,10 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
+import 'certificado_excel.dart';
 import 'inventario_sync.dart';
+import 'solicitudes_storage.dart';
+import 'solicitudes_sync.dart';
 import '../utils/text_utils.dart';
 
 class InventarioData {
@@ -164,21 +167,70 @@ class InventarioData {
       if (porId != -1) return porId;
     }
 
-    final serie = referencia['serie']?.toString().trim() ?? '';
-    final inventario = referencia['inventario']?.toString().trim() ?? '';
-    final nombre = referencia['nombre']?.toString().trim() ?? '';
-    final ubicacion = referencia['ubicacion']?.toString().trim() ?? '';
+    // Dato viejo sin clave ni id: se busca por contenido, pero solo se
+    // acepta un resultado ÚNICO. Una serie/inventario de relleno ("NO
+    // REGISTRA") o repetida ya no cae en el primer equipo que la tenga:
+    // si hay varios candidatos, se prueba con una combinación más
+    // específica y, si sigue ambiguo, no se toca ningún equipo (-1).
+    for (final campos in const [
+      ['serie', 'inventario', 'nombre'],
+      ['serie', 'nombre'],
+      ['inventario', 'nombre'],
+      ['serie', 'inventario'],
+      ['serie'],
+      ['inventario'],
+      ['nombre', 'ubicacion'],
+    ]) {
+      final claveRef = _claveCampos(referencia, campos);
+      if (claveRef == null) continue;
+      int encontrado = -1;
+      int cuantos = 0;
+      for (int i = 0; i < lista.length; i++) {
+        if (_claveCampos(lista[i], campos) == claveRef) {
+          encontrado = i;
+          cuantos++;
+        }
+      }
+      if (cuantos == 1) return encontrado;
+    }
+    return -1;
+  }
 
-    return lista.indexWhere((e) {
-      if (serie.isNotEmpty) {
-        return e['serie']?.toString().trim() == serie;
-      }
-      if (inventario.isNotEmpty) {
-        return e['inventario']?.toString().trim() == inventario;
-      }
-      return e['nombre']?.toString().trim() == nombre &&
-          e['ubicacion']?.toString().trim() == ubicacion;
-    });
+  // Textos que los clientes ponen en serie/inventario cuando el equipo no
+  // tiene uno: no identifican a ningún equipo.
+  static const Set<String> _textosDeRelleno = {
+    'NO REGISTRA', 'NOREGISTRA', 'NO REGISTRADO', 'NR', 'N/R', 'NA', 'N/A',
+    'NO APLICA', 'S/N', 'SN', 'S/S', 'SIN SERIE', 'SIN SERIAL', 'SIN NUMERO',
+    'SIN INVENTARIO', 'SIN CODIGO', 'SIN PLACA', 'NO TIENE', 'NO', 'NINGUNO',
+    'ND', 'N/D', 'NO DISPONIBLE', 'X', 'XX', 'XXX',
+  };
+
+  /// Valor normalizado de un campo para emparejar equipos: mayúsculas, sin
+  /// tildes ni espacios sobrantes. En serie/inventario, un texto de relleno
+  /// ("NO REGISTRA", "N/A", "S/N", "0", "-") cuenta como vacío.
+  static String valorParaEmparejar(Map<String, dynamic> e, String campo) {
+    final s = TextUtils.quitarTildes(
+            (e[campo]?.toString() ?? '').trim().toUpperCase())
+        .replaceAll(RegExp(r'\s+'), ' ');
+    if (campo != 'serie' && campo != 'inventario') return s;
+    if (RegExp(r'^[\s\-_/\.0]*$').hasMatch(s)) return '';
+    final sinPuntos = s.replaceAll('.', '').trim();
+    if (_textosDeRelleno.contains(s) || _textosDeRelleno.contains(sinPuntos)) {
+      return '';
+    }
+    return s;
+  }
+
+  /// Clave con los [campos] del equipo, o null si alguno está vacío (o es
+  /// relleno): una clave incompleta no sirve para identificar un equipo.
+  static String? _claveCampos(Map<String, dynamic> e, List<String> campos) {
+    final partes = <String>[];
+    for (final c in campos) {
+      final v = valorParaEmparejar(e, c);
+      if (v.isEmpty) return null;
+      partes.add(v);
+    }
+    return partes.join('\u0001');
   }
 
   // =====================
@@ -289,6 +341,23 @@ class InventarioData {
   static void _aplicarEquiposRemotos(List<Map<String, dynamic>> remotos) {
     if (cliente.isEmpty) return;
     final copia = remotos.map((e) => Map<String, dynamic>.from(e)).toList();
+    // Equipos que otro técnico (o este celular) cambió: sus solicitudes
+    // locales toman los datos nuevos.
+    final previos = {
+      for (final e in equiposNotifier.value)
+        InventarioSync.docId(e): e,
+    };
+    final cambiados = <Map<String, dynamic>>[];
+    for (final e in copia) {
+      final previo = previos[InventarioSync.docId(e)];
+      if (previo != null &&
+          copiarCamposDelEquipo(Map<String, dynamic>.from(previo), e)) {
+        cambiados.add(e);
+      }
+    }
+    if (cambiados.isNotEmpty) {
+      unawaited(propagarASolicitudes(cambiados, subirANube: false));
+    }
     _asegurarIds(copia); // equipos creados desde un celular sin id
     copia.sort((a, b) {
       final oa = a['orden'] is int ? a['orden'] as int : 0;
@@ -409,28 +478,140 @@ class InventarioData {
     ));
   }
 
-  /// Clave natural para emparejar un equipo del Excel nuevo con uno ya
-  /// conocido: serie, si no inventario, si no nombre+ubicación.
-  static String _claveEmparejar(Map<String, dynamic> e) {
-    String t(String campo) => e[campo]?.toString().trim() ?? '';
-    if (t('serie').isNotEmpty) return 's:${t('serie')}';
-    if (t('inventario').isNotEmpty) return 'i:${t('inventario')}';
-    return 'n:${t('nombre')}:${t('ubicacion')}';
+  /// Empareja cada fila del Excel nuevo con, a lo sumo, un equipo ya
+  /// conocido. Devuelve, por fila nueva, el índice en [existentes] o null.
+  ///
+  /// La serie sola NO basta: los clientes repiten series (flujómetros,
+  /// reguladores) y usan "NO REGISTRA" en serie o inventario. Antes todo
+  /// equipo con la misma serie caía en un solo grupo y se emparejaba por
+  /// orden de aparición, así que al cambiar el orden o un dato del Excel
+  /// el certificado de un equipo quedaba en otro. Ahora se empareja por
+  /// pasadas, de la más segura a la más floja:
+  ///   1. Mismo número de certificado (lo más confiable), si es único y
+  ///      la serie/inventario no lo contradicen.
+  ///   2. Combinaciones de serie/inventario/nombre/marca/modelo/ubicación,
+  ///      de la más completa a la más corta. Los rellenos cuentan como
+  ///      vacíos y una combinación con un campo vacío no se usa.
+  ///   3. Serie sola o inventario solo, SOLO si es único en ambos lados.
+  /// Lo que queda sin pareja se toma como equipo nuevo (no se adivina).
+  static List<int?> emparejar(
+    List<Map<String, dynamic>> nuevos,
+    List<Map<String, dynamic>> existentes,
+  ) {
+    final pareja = List<int?>.filled(nuevos.length, null);
+    final usados = <int>{};
+
+    // Serie o inventario reales distintos = equipos distintos, aunque
+    // compartan otro dato (p. ej. un certificado que quedó cruzado).
+    bool compatibles(Map<String, dynamic> a, Map<String, dynamic> b) {
+      for (final c in const ['serie', 'inventario']) {
+        final va = valorParaEmparejar(a, c);
+        final vb = valorParaEmparejar(b, c);
+        if (va.isNotEmpty && vb.isNotEmpty && va != vb) return false;
+      }
+      return true;
+    }
+
+    void pasada(List<String> campos, {required bool unico}) {
+      final Map<String, List<int>> porClaveNuevos = {};
+      final Map<String, List<int>> porClaveExist = {};
+      for (int i = 0; i < nuevos.length; i++) {
+        if (pareja[i] != null) continue;
+        final k = _claveCampos(nuevos[i], campos);
+        if (k != null) (porClaveNuevos[k] ??= []).add(i);
+      }
+      for (int j = 0; j < existentes.length; j++) {
+        if (usados.contains(j)) continue;
+        final k = _claveCampos(existentes[j], campos);
+        if (k != null) (porClaveExist[k] ??= []).add(j);
+      }
+      porClaveNuevos.forEach((k, filas) {
+        final cand = porClaveExist[k];
+        if (cand == null) return;
+        if (unico && (filas.length != 1 || cand.length != 1)) return;
+        if (unico && !compatibles(nuevos[filas[0]], existentes[cand[0]])) {
+          return;
+        }
+        // Con la combinación completa, los repetidos son indistinguibles
+        // (mismo nombre, marca, modelo, serie, inventario y ubicación):
+        // da igual cuál con cuál, se emparejan en orden.
+        for (int n = 0; n < filas.length && n < cand.length; n++) {
+          pareja[filas[n]] = cand[n];
+          usados.add(cand[n]);
+        }
+      });
+    }
+
+    pasada(['certificado'], unico: true);
+    const todos = [
+      'nombre',
+      'marca',
+      'modelo',
+      'serie',
+      'inventario',
+      'ubicacion',
+    ];
+    pasada(todos, unico: false);
+    // Equipos sin serie ni inventario: misma descripción y ubicación, en
+    // orden (son indistinguibles por sus datos).
+    {
+      final sinIdNuevos = [
+        for (int i = 0; i < nuevos.length; i++)
+          if (pareja[i] == null &&
+              valorParaEmparejar(nuevos[i], 'serie').isEmpty &&
+              valorParaEmparejar(nuevos[i], 'inventario').isEmpty)
+            i
+      ];
+      final Map<String, List<int>> exist = {};
+      for (int j = 0; j < existentes.length; j++) {
+        if (usados.contains(j)) continue;
+        if (valorParaEmparejar(existentes[j], 'serie').isNotEmpty ||
+            valorParaEmparejar(existentes[j], 'inventario').isNotEmpty) {
+          continue;
+        }
+        final k = _claveCampos(existentes[j], const ['nombre', 'ubicacion']);
+        if (k == null) continue;
+        final k2 = '$k\u0001${valorParaEmparejar(existentes[j], 'marca')}'
+            '\u0001${valorParaEmparejar(existentes[j], 'modelo')}';
+        (exist[k2] ??= []).add(j);
+      }
+      for (final i in sinIdNuevos) {
+        final k = _claveCampos(nuevos[i], const ['nombre', 'ubicacion']);
+        if (k == null) continue;
+        final k2 = '$k\u0001${valorParaEmparejar(nuevos[i], 'marca')}'
+            '\u0001${valorParaEmparejar(nuevos[i], 'modelo')}';
+        final cand = exist[k2];
+        if (cand == null || cand.isEmpty) continue;
+        final j = cand.removeAt(0);
+        pareja[i] = j;
+        usados.add(j);
+      }
+    }
+    pasada(['serie', 'inventario', 'nombre'], unico: false);
+    pasada(['serie', 'inventario'], unico: false);
+    pasada(['serie', 'nombre', 'ubicacion'], unico: true);
+    pasada(['inventario', 'nombre', 'ubicacion'], unico: true);
+    pasada(['serie', 'nombre'], unico: true);
+    pasada(['inventario', 'nombre'], unico: true);
+    pasada(['serie'], unico: true);
+    pasada(['inventario'], unico: true);
+    return pareja;
   }
 
   /// Aplica sobre los equipos de un Excel recién importado lo que la app
   /// ya sabía de ellos (id, clave_nube, certificado, fecha, observaciones,
   /// fuera de servicio, no pasa calibración — campos que el Excel no trae
   /// o que el técnico registró en la app) y fija `orden` y `clave_nube`.
-  ///
-  /// Varios equipos pueden compartir serie/inventario de relleno ("NO
-  /// REGISTRA"), así que el N-ésimo repetido del Excel nuevo se empareja
-  /// con el N-ésimo repetido de los existentes, en vez de colapsar todos
-  /// sobre uno (eso cruzaba certificados entre equipos distintos).
+  /// El emparejamiento está en [emparejar].
   ///
   /// `clave_nube` se hereda del existente emparejado: una fila insertada o
   /// borrada en el Excel ya no cambia el documento de nube de los demás
   /// equipos. Solo los equipos sin pareja reciben una clave nueva.
+  ///
+  /// Certificado: manda el del Excel. Si la fila no trae, se hereda el de
+  /// la app SOLO si ese número no aparece en otra fila del Excel; si
+  /// aparece, era un certificado cruzado y se marca `limpiar_certificado`
+  /// para borrarlo también de la nube.
   static List<Map<String, dynamic>> fusionarConExistentes(
     List<Map<String, dynamic>> nuevos,
     List<Map<String, dynamic>> existentes,
@@ -442,21 +623,18 @@ class InventarioData {
       'no_pasa_calibracion_por',
     ];
 
-    final Map<String, List<Map<String, dynamic>>> porClave = {};
-    for (final e in existentes) {
-      (porClave[_claveEmparejar(e)] ??= []).add(e);
-    }
+    final certsExcel = <String>{
+      for (final e in nuevos)
+        if (valorParaEmparejar(e, 'certificado').isNotEmpty)
+          valorParaEmparejar(e, 'certificado'),
+    };
+    final pareja = emparejar(nuevos, existentes);
 
-    final Map<String, int> ocurrencia = {};
     final resultado = <Map<String, dynamic>>[];
     for (int i = 0; i < nuevos.length; i++) {
       final e = <String, dynamic>{...nuevos[i], 'orden': i};
-      final clave = _claveEmparejar(e);
-      final n = ocurrencia[clave] = (ocurrencia[clave] ?? 0) + 1;
-      final candidatos = porClave[clave];
-      final previo = (candidatos != null && n <= candidatos.length)
-          ? candidatos[n - 1]
-          : null;
+      e.remove('limpiar_certificado');
+      final previo = pareja[i] == null ? null : existentes[pareja[i]!];
 
       if (previo != null) {
         String v(String campo) => previo[campo]?.toString().trim() ?? '';
@@ -465,10 +643,16 @@ class InventarioData {
         // clave_nube: el que se calculaba con su contenido y orden de
         // entonces).
         e['clave_nube'] = InventarioSync.docId(previo);
-        // Certificado/fecha: el del Excel si lo trae, si no el de la app.
-        if ((e['certificado']?.toString().trim() ?? '').isEmpty) {
-          if (v('certificado').isNotEmpty) e['certificado'] = v('certificado');
-          if (v('fecha').isNotEmpty) e['fecha'] = v('fecha');
+        if ((e['certificado']?.toString().trim() ?? '').isEmpty &&
+            v('certificado').isNotEmpty) {
+          if (certsExcel.contains(valorParaEmparejar(previo, 'certificado'))) {
+            e['certificado'] = '';
+            e['fecha'] = '';
+            e['limpiar_certificado'] = true;
+          } else {
+            e['certificado'] = v('certificado');
+            if (v('fecha').isNotEmpty) e['fecha'] = v('fecha');
+          }
         }
         for (final campo in textosDeLaApp) {
           if (v(campo).isNotEmpty) e[campo] = v(campo);
@@ -525,14 +709,22 @@ class InventarioData {
   // así cualquier campo futuro que el diálogo no incluya queda preservado.
   // =====================
   static Future<void> actualizar(
-      int index, Map<String, dynamic> actualizado) async {
-    if (index < 0 || index >= equiposNotifier.value.length) return;
+      int index, Map<String, dynamic> actualizado,
+      {Map<String, dynamic>? referencia}) async {
     final copia = List<Map<String, dynamic>>.from(equiposNotifier.value);
+    // La lista puede reordenarse (cambio de otro técnico) mientras el
+    // diálogo está abierto: se busca el equipo de nuevo al guardar.
+    if (referencia != null) {
+      final i = indexPorIdOCascada(copia, referencia);
+      if (i != -1) index = i;
+    }
+    if (index < 0 || index >= copia.length) return;
     copia[index] = {...copia[index], ...actualizado};
     equiposNotifier.value = copia;
     await _guardar();
     unawaited(InventarioSync.upsertEquipo(
         InventarioSync.slug(cliente), copia[index]));
+    unawaited(propagarASolicitudes([copia[index]], subirANube: true));
   }
 
   // =====================
@@ -590,7 +782,21 @@ class InventarioData {
 
     copia[index] = {
       ...copia[index], // preservar campos existentes (fuera_de_servicio, etc.)
-      ...equipoFinal, // aplicar cambios del formulario
+      // Solo los datos que el formulario de la solicitud edita: el resto de
+      // equipoFinal es la copia del equipo tomada al abrir la solicitud
+      // (orden, id, fuera de servicio...) y pisaría cambios más nuevos.
+      for (final campo in const [
+        'nombre',
+        'marca',
+        'modelo',
+        'serie',
+        'ubicacion',
+        'inventario',
+        'no_pasa_calibracion',
+        'no_pasa_calibracion_detalle',
+        'no_pasa_calibracion_por',
+      ])
+        if (equipoFinal.containsKey(campo)) campo: equipoFinal[campo],
       'certificado': certificado,
       'fecha': fecha,
       'observaciones': observaciones,
@@ -600,7 +806,142 @@ class InventarioData {
     await _guardar();
     unawaited(InventarioSync.upsertEquipo(
         InventarioSync.slug(cliente), copia[index]));
+    // Otras solicitudes del mismo equipo (p. ej. una enviada antes) quedan
+    // con estos datos también.
+    unawaited(propagarASolicitudes([copia[index]], subirANube: true));
     return true;
+  }
+
+  // =====================
+  // DATOS DEL EQUIPO TRANSVERSALES (inventario ⇄ solicitudes)
+  //
+  // El equipo se edita en tres lugares: el diálogo del inventario, al
+  // crear una solicitud y al modificar una solicitud. El inventario es la
+  // copia vigente (la última edición, venga de donde venga, y la de otros
+  // técnicos por la nube); cada solicitud guarda en su JSON una COPIA del
+  // equipo que antes quedaba congelada el día que se guardó. Ahora:
+  //   - al abrir una solicitud se toman los datos actuales del inventario
+  //     ([equipoActual]);
+  //   - cada cambio del equipo en el inventario (propio o remoto) se
+  //     copia a las solicitudes de ese equipo ([propagarASolicitudes]).
+  // =====================
+
+  /// Datos del equipo que viven en el inventario y se reflejan en las
+  /// solicitudes. El certificado y la fecha NO: cada solicitud tiene el
+  /// suyo.
+  static const List<String> camposDelEquipo = [
+    'nombre',
+    'marca',
+    'modelo',
+    'serie',
+    'ubicacion',
+    'inventario',
+    'observaciones',
+    'fuera_de_servicio',
+    'fuera_de_servicio_por',
+  ];
+
+  /// Versión vigente en el inventario del equipo [referencia] (copia del
+  /// equipo guardada en una solicitud), o null si su cliente no es el
+  /// activo o el equipo no está.
+  static Map<String, dynamic>? equipoActual(
+    Map<String, dynamic> referencia, {
+    required String nombreCliente,
+  }) {
+    if (cliente.isEmpty ||
+        InventarioSync.slug(nombreCliente) != InventarioSync.slug(cliente)) {
+      return null;
+    }
+    final lista = equiposNotifier.value;
+    final i = indexPorIdOCascada(lista, referencia);
+    return i == -1 ? null : Map<String, dynamic>.from(lista[i]);
+  }
+
+  /// [destino] con los [camposDelEquipo] de [fuente]. Devuelve si cambió.
+  static bool copiarCamposDelEquipo(
+      Map<String, dynamic> destino, Map<String, dynamic> fuente) {
+    bool cambio = false;
+    for (final campo in camposDelEquipo) {
+      if (!fuente.containsKey(campo)) continue;
+      final nuevo = fuente[campo];
+      if ((destino[campo]?.toString() ?? '') != (nuevo?.toString() ?? '')) {
+        destino[campo] = nuevo;
+        cambio = true;
+      }
+    }
+    return cambio;
+  }
+
+  static bool _mismaClave(Map<String, dynamic> a, Map<String, dynamic> b) {
+    final ca = a['clave_nube']?.toString() ?? '';
+    final cb = b['clave_nube']?.toString() ?? '';
+    if (ca.isNotEmpty && cb.isNotEmpty) return ca == cb;
+    final ia = a['id']?.toString() ?? '';
+    final ib = b['id']?.toString() ?? '';
+    return ia.isNotEmpty && ia == ib;
+  }
+
+  static Future<void> _colaPropagar = Future.value();
+
+  /// Copia los datos de [equipos] (ya actualizados en el inventario) a
+  /// las solicitudes guardadas en este celular (pendientes y enviadas) de
+  /// esos mismos equipos y regenera su certificado .xlsx. Con
+  /// [subirANube] (solo el celular donde se hizo la edición) también
+  /// actualiza el equipo de esas solicitudes en la nube, para que los
+  /// demás técnicos las vean igual. Nunca lanza.
+  static Future<void> propagarASolicitudes(
+    List<Map<String, dynamic>> equipos, {
+    required bool subirANube,
+  }) {
+    if (equipos.isEmpty || cliente.isEmpty) return Future.value();
+    final clienteId = InventarioSync.slug(cliente);
+    final copias = [for (final e in equipos) Map<String, dynamic>.from(e)];
+    final tarea = _colaPropagar.then((_) async {
+      try {
+        final archivos = <File>[
+          ...await SolicitudesStorage.listarPendientes(),
+          ...(await SolicitudesStorage.enviadasDir())
+              .listSync()
+              .whereType<File>()
+              .where((f) => f.path.toLowerCase().endsWith('.json')),
+        ];
+        for (final f in archivos) {
+          try {
+            final Map<String, dynamic> data =
+                jsonDecode(await f.readAsString());
+            final nombreCli =
+                (data['cliente'] as Map?)?['nombre']?.toString() ?? '';
+            if (InventarioSync.slug(nombreCli) != clienteId) continue;
+            final equipo =
+                Map<String, dynamic>.from((data['equipo'] as Map?) ?? {});
+            Map<String, dynamic>? fuente;
+            for (final e in copias) {
+              if (_mismaClave(e, equipo)) fuente = e;
+            }
+            if (fuente == null) continue;
+            if (!copiarCamposDelEquipo(equipo, fuente)) continue;
+            data['equipo'] = equipo;
+            await f.writeAsString(
+                const JsonEncoder.withIndent('  ').convert(data));
+            try {
+              await CertificadoExcel.generarDesdeSolicitud(f);
+            } catch (e) {
+              debugPrint('InventarioData.propagar: xlsx ${f.path}: $e');
+            }
+            if (subirANube) {
+              unawaited(SolicitudesSync.actualizarEquipoEnNube(
+                  clienteId, InventarioSync.docId(equipo), equipo));
+            }
+          } catch (e) {
+            debugPrint('InventarioData.propagar: ${f.path}: $e');
+          }
+        }
+      } catch (e) {
+        debugPrint('InventarioData.propagarASolicitudes: $e');
+      }
+    });
+    _colaPropagar = tarea;
+    return tarea;
   }
 
   // =====================

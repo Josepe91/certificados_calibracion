@@ -277,6 +277,49 @@ class InventarioSync {
       }
       await batch.commit();
     }
+    await _borrarCopiasCruzadas(clienteId, equipos);
+  }
+
+  /// Tras reimportar: borra de la nube los documentos que ya no
+  /// corresponden a ninguna fila del Excel y cuyo certificado SÍ está en
+  /// otra fila — son copias viejas de un certificado cruzado y, si se
+  /// dejan, el técnico ve el mismo certificado en dos equipos. Los
+  /// documentos sobrantes sin certificado, o con uno que el Excel no
+  /// tiene (registrado en la app y aún no pasado al Excel), NO se borran.
+  static Future<void> _borrarCopiasCruzadas(
+    String clienteId,
+    List<Map<String, dynamic>> equipos,
+  ) async {
+    String cert(dynamic v) =>
+        TextUtils.quitarTildes((v?.toString() ?? '').trim().toUpperCase())
+            .replaceAll(RegExp(r'\s+'), ' ');
+    final ids = {for (final e in equipos) docId(e)};
+    final certsExcel = {
+      for (final e in equipos)
+        if (cert(e['certificado']).isNotEmpty) cert(e['certificado'])
+    };
+    if (certsExcel.isEmpty) return;
+    try {
+      final snap = await _equiposRef(clienteId)
+          .get(const GetOptions(source: Source.server));
+      final sobrantes = snap.docs.where((d) =>
+          !ids.contains(d.id) &&
+          certsExcel.contains(cert(d.data()['certificado'])));
+      final lista = sobrantes.toList();
+      for (int i = 0; i < lista.length; i += 400) {
+        final batch = _db.batch();
+        for (final d in lista.skip(i).take(400)) {
+          batch.delete(d.reference);
+        }
+        await batch.commit();
+      }
+      if (lista.isNotEmpty) {
+        debugPrint('InventarioSync: ${lista.length} copias con certificado '
+            'cruzado borradas de la nube.');
+      }
+    } catch (e) {
+      debugPrint('InventarioSync._borrarCopiasCruzadas: $e');
+    }
   }
 
   /// Lista TODOS los clientes que existen hoy en la nube (los haya
@@ -455,6 +498,9 @@ class InventarioSync {
   static Map<String, dynamic> _limpiar(Map<String, dynamic> equipo) {
     final copia = Map<String, dynamic>.from(equipo);
     copia.removeWhere((key, value) => value == null);
+    // Marca interna de la reimportación (ver _soloEstructura): nunca se
+    // guarda como campo en la nube.
+    copia.remove('limpiar_certificado');
     return copia;
   }
 
@@ -464,6 +510,23 @@ class InventarioSync {
   /// certificado/fecha/observación que otro técnico ya haya registrado.
   static Map<String, dynamic> _soloEstructura(Map<String, dynamic> equipo) {
     final copia = _limpiar(equipo);
+    // Certificado cruzado detectado al reimportar (ese número es de otra
+    // fila del Excel): aquí sí hay que borrarlo en la nube.
+    if (equipo['limpiar_certificado'] == true) {
+      copia['certificado'] = '';
+      copia['fecha'] = '';
+      for (final campo in const [
+        'observaciones',
+        'fuera_de_servicio_por',
+        'no_pasa_calibracion_detalle',
+        'no_pasa_calibracion_por',
+      ]) {
+        if ((copia[campo]?.toString().trim() ?? '').isEmpty) {
+          copia.remove(campo);
+        }
+      }
+      return copia;
+    }
     for (final campo in [
       'certificado',
       'fecha',

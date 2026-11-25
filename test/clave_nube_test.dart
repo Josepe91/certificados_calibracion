@@ -134,4 +134,107 @@ void main() {
       expect(InventarioData.indexPorIdOCascada(lista, referencia), 1);
     });
   });
+
+  group('Series repetidas y NO REGISTRA (La Magdalena 2026-11-25)', () {
+    Map<String, dynamic> f(String serie, String inv,
+            {String cert = '', String ubic = 'UCI', String clave = ''}) =>
+        {
+          'nombre': 'FLUJÓMETRO DOBLE',
+          'marca': 'GENTEC',
+          'modelo': 'FM197B',
+          'serie': serie,
+          'inventario': inv,
+          'ubicacion': ubic,
+          if (cert.isNotEmpty) 'certificado': cert,
+          if (clave.isNotEmpty) 'clave_nube': clave,
+        };
+
+    test('misma serie con distinto inventario no se cruza al cambiar el orden',
+        () {
+      final previos = [
+        f('F01241', '180099', cert: 'JS1', clave: 'k1'),
+        f('F01241', 'NO REGISTRA', cert: 'JS2', clave: 'k2'),
+        f('F01241', '180115', cert: 'JS3', clave: 'k3'),
+      ];
+      // El Excel nuevo viene en otro orden y sin certificados.
+      final r = InventarioData.fusionarConExistentes([
+        f('F01241', '180115'),
+        f('F01241', 'NO REGISTRA'),
+        f('F01241', '180099'),
+      ], previos);
+      expect(r.map((e) => e['clave_nube']), ['k3', 'k2', 'k1']);
+      expect(r.map((e) => e['certificado']), ['JS3', 'JS2', 'JS1']);
+    });
+
+    test('inventario cambiado a NO REGISTRA sigue emparejando por certificado',
+        () {
+      final previos = [
+        {...f('FP5-65031574', '50950', cert: 'JS14503-26', clave: 'k1'),
+          'nombre': 'DESFIBRILADOR'},
+        {...f('FP5-65031690', '50951', cert: 'JS14589-26', clave: 'k2'),
+          'nombre': 'DESFIBRILADOR'},
+      ];
+      final r = InventarioData.fusionarConExistentes([
+        {...f('FP5-65031690', '50951', cert: 'JS14589-26'),
+          'nombre': 'DESFIBRILADOR'},
+        {...f('FP5-65031574', 'NO REGISTRA', cert: 'JS14503-26'),
+          'nombre': 'DESFIBRILADOR'},
+      ], previos);
+      expect(r.map((e) => e['clave_nube']), ['k2', 'k1']);
+    });
+
+    test('el certificado de otra fila del Excel no se hereda (se limpia)', () {
+      // En la nube el certificado JS2 quedó cruzado en el equipo k1.
+      final previos = [
+        f('F04091', '170001', cert: 'JS2', clave: 'k1'),
+        f('F04091', '170002', clave: 'k2'),
+      ];
+      final r = InventarioData.fusionarConExistentes([
+        f('F04091', '170001'),
+        f('F04091', '170002', cert: 'JS2'),
+      ], previos);
+      expect(r[0]['clave_nube'], 'k1');
+      expect(r[0]['certificado'], '');
+      expect(r[0]['limpiar_certificado'], true);
+      expect(r[1]['clave_nube'], 'k2');
+      expect(r[1]['certificado'], 'JS2');
+    });
+
+    test('serie repetida sin más datos que la distingan no se adivina', () {
+      final previos = [
+        f('J07I11', 'NO REGISTRA', ubic: 'URGENCIAS', cert: 'JS5', clave: 'k1'),
+        f('J07I11', 'NO REGISTRA', ubic: 'UCI', cert: 'JS6', clave: 'k2'),
+      ];
+      // Las dos filas nuevas cambiaron de ubicación: no hay cómo saber
+      // cuál es cuál, así que ninguna hereda certificado ajeno.
+      final r = InventarioData.fusionarConExistentes([
+        f('J07I11', 'NO REGISTRA', ubic: 'PISO 2'),
+        f('J07I11', 'NO REGISTRA', ubic: 'PISO 3'),
+      ], previos);
+      expect(r.map((e) => e['certificado']), [null, null]);
+    });
+
+    test('rellenos cuentan como vacíos', () {
+      for (final t in ['NO REGISTRA', 'n/a', 'S/N', ' - ', '0', 'N.A.', '']) {
+        expect(InventarioData.valorParaEmparejar({'serie': t}, 'serie'), '',
+            reason: t);
+      }
+      expect(InventarioData.valorParaEmparejar({'serie': ' f01241 '}, 'serie'),
+          'F01241');
+    });
+
+    test('indexPorIdOCascada no cae en el primer NO REGISTRA', () {
+      final lista = [
+        {...f('NO REGISTRA', 'NO REGISTRA'), 'nombre': 'TENSIÓMETRO'},
+        {...f('NO REGISTRA', '170339'), 'nombre': 'TENSIÓMETRO'},
+      ];
+      final ref = {...f('NO REGISTRA', '170339'), 'nombre': 'TENSIÓMETRO'};
+      expect(InventarioData.indexPorIdOCascada(lista, ref), 1);
+      final ambiguo = [
+        f('F01241', '1'),
+        f('F01241', '2'),
+      ];
+      expect(InventarioData.indexPorIdOCascada(ambiguo, f('F01241', '')), -1);
+    });
+  });
 }
